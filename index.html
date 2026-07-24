@@ -411,6 +411,34 @@ header{padding:26px 0 16px;display:flex;align-items:flex-end;justify-content:spa
   font-size:10px;font-weight:700;background:var(--morning);color:#fff;
   padding:3px 8px;border-radius:6px;margin-left:8px;vertical-align:2px;
 }
+
+/* ---- ぜんぶ そろった ---- */
+.progress-card.alldone{
+  border-color:var(--home);border-width:2px;background:var(--home-bg);
+}
+.progress-card.alldone .bar{background:rgba(255,255,255,.6)}
+.progress-card.alldone .bar i{background:var(--home)}
+.progress-card.alldone .progress-count b{color:var(--home)}
+.yosh-txt{
+  font-family:'Zen Maru Gothic',sans-serif;font-weight:900;
+  color:var(--home);font-size:17px;letter-spacing:.04em;
+  display:inline-block;
+}
+.progress-card.cheer{animation:cardCheer .6s cubic-bezier(.3,1.4,.5,1)}
+.progress-card.cheer .yosh-txt{animation:txtCheer .7s cubic-bezier(.28,1.7,.5,1)}
+@keyframes cardCheer{
+  0%,100%{transform:scale(1)}
+  35%{transform:scale(1.03)}
+}
+@keyframes txtCheer{
+  0%  {transform:scale(.4) rotate(-12deg);opacity:0}
+  45% {transform:scale(1.25) rotate(5deg);opacity:1}
+  70% {transform:scale(.97) rotate(-2deg)}
+  100%{transform:scale(1) rotate(0)}
+}
+@media (prefers-reduced-motion: reduce){
+  .progress-card.cheer,.progress-card.cheer .yosh-txt{animation:none}
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
@@ -990,13 +1018,18 @@ function renderPrep(){
   $('pDone').textContent=done; $('pAll').textContent=total;
   $('pBar').style.width=(total?done/total*100:0)+'%';
   const left=total-done;
-  $('pMsg').textContent = !total?'じゅんびは ありません'
-    : left===0?'ぜんぶ そろいました 🎉'
+  $('pMsg').innerHTML = !total?'じゅんびは ありません'
+    : left===0?'<b class="yosh-txt">よしっ！</b> ぜんぶ そろいました'
     : left===total?`これから ${total}つ`:`あと ${left}つ`;
 
   const NOON=12*60, EVE=20*60;
-  const shift = nowM<NOON ? 0 : 1;
-  const four = nowM>=NOON && nowM<EVE;
+  const isSchool=d=>schoolDows.includes(((d%7)+7)%7);
+  const findNext=from=>{
+    for(let n=from;n<from+14;n++) if(isSchool(todayDow()+n)) return n;
+    return from;
+  };
+  const shift = findNext(nowM<NOON ? 0 : 1);
+  const four = nowM>=NOON && nowM<EVE && isSchool(todayDow());
   $('dLabel').textContent = four ? 'きょうの帰り ＋ つぎの登園' : 'つぎの登園日';
   $('dVal').textContent = `${mdLabel(shift)}（${DAYS[((todayDow()+shift)%7+7)%7]}）`;
 
