@@ -210,6 +210,9 @@ header{padding:26px 0 16px;display:flex;align-items:flex-end;justify-content:spa
   color:#A9A296;margin-left:8px;letter-spacing:0;
 }
 .opt-row.multi .opt.on{background:var(--stock);border-color:var(--stock);color:#fff}
+.opt.sch.on{background:var(--ink);border-color:var(--ink);color:#fff}
+#swSchool{gap:6px}
+#swSchool .opt{flex:1;padding:11px 0;text-align:center}
 .fld input[type=text],.fld input[type=number]{
   width:100%;font-family:'Zen Kaku Gothic New',sans-serif;
   font-size:16px;font-weight:500;color:var(--ink);
@@ -333,6 +336,52 @@ header{padding:26px 0 16px;display:flex;align-items:flex-end;justify-content:spa
   font-family:'Zen Maru Gothic',sans-serif;font-weight:700;
   font-size:13.5px;color:var(--ink-soft);padding:14px 0 2px;
 }
+
+/* ---- 完了したカテゴリ ---- */
+.slot.done{position:relative;overflow:hidden}
+.slot.done .list{opacity:.5;transition:opacity .3s}
+.yosh{
+  position:absolute;inset:0;z-index:3;
+  display:grid;place-items:center;
+  pointer-events:none;opacity:0;
+}
+.yosh span{
+  font-family:'Zen Maru Gothic',sans-serif;
+  font-weight:900;font-size:30px;letter-spacing:.06em;
+  color:#fff;padding:12px 26px;border-radius:99px;
+  transform:scale(.6) rotate(-6deg);
+  box-shadow:0 8px 24px rgba(0,0,0,.18);
+}
+.night   .yosh span{background:var(--night)}
+.morning .yosh span{background:var(--morning)}
+.home    .yosh span{background:var(--home)}
+.stock   .yosh span{background:var(--stock)}
+
+/* チェックした瞬間だけ再生する */
+.slot.pop .yosh{animation:yoshFade 1.5s ease forwards}
+.slot.pop .yosh span{animation:yoshPop 1.5s cubic-bezier(.28,1.6,.5,1) forwards}
+.slot.pop{animation:slotShake .5s ease}
+
+@keyframes yoshFade{
+  0%{opacity:0} 12%{opacity:1} 68%{opacity:1} 100%{opacity:0}
+}
+@keyframes yoshPop{
+  0%  {transform:scale(.5) rotate(-14deg)}
+  35% {transform:scale(1.14) rotate(4deg)}
+  50% {transform:scale(1) rotate(-2deg)}
+  68% {transform:scale(1) rotate(0deg)}
+  100%{transform:scale(.94) rotate(0deg)}
+}
+@keyframes slotShake{
+  0%,100%{transform:translateX(0)}
+  25%{transform:translateX(-4px)}
+  60%{transform:translateX(3px)}
+}
+@media (prefers-reduced-motion: reduce){
+  .slot.pop .yosh{animation:yoshFade 1.2s ease forwards}
+  .slot.pop .yosh span,.slot.pop{animation:none}
+  .slot.pop .yosh span{transform:scale(1) rotate(0)}
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
@@ -410,6 +459,12 @@ header{padding:26px 0 16px;display:flex;align-items:flex-end;justify-content:spa
     <div class="ghead">通知</div>
     <div id="notifRow"></div>
 
+    <div class="ghead">登園する曜日</div>
+    <div class="hint">えらんだ曜日だけ、じゅんびと通知が出ます。</div>
+    <div class="row">
+      <div class="opt-row multi" id="swSchool" style="width:100%"></div>
+    </div>
+
     <div class="ghead">通知する時間</div>
     <div class="row">
       <div class="sec-ico" style="background:var(--home)">🎒</div>
@@ -431,7 +486,7 @@ header{padding:26px 0 16px;display:flex;align-items:flex-end;justify-content:spa
     </div>
 
     <div class="ghead">色をえらぶ</div>
-    <div class="hint">3つのカテゴリの色を、好きに変えられます。</div>
+    <div class="hint">4つのカテゴリの色を、好きに変えられます。</div>
     <div class="row">
       <div class="row-body"><div class="row-name">🌙 よるのじゅんび</div></div>
       <div class="swatches" id="swNight"></div>
@@ -569,6 +624,8 @@ async function loadAll(){
       home:   hh.data.color_home    || PALETTE.home[0],
       stock:  hh.data.color_stock   || PALETTE.stock[0],
     };
+    schoolDows = (hh.data.school_dows && hh.data.school_dows.length)
+      ? [...hh.data.school_dows].sort() : [1,2,3,4,5];
     applyColors();
   }
 
@@ -666,6 +723,29 @@ async function saveColors(){
     color_home:colors.home,   color_stock:colors.stock
   }).eq('id',householdId);
 }
+let schoolDows=[1,2,3,4,5];
+
+function renderSchool(){
+  const box=$('swSchool');
+  box.innerHTML=[1,2,3,4,5,6,0].map(d=>
+    `<button class="opt sch${schoolDows.includes(d)?' on':''}" data-d="${d}">${DAYS[d]}</button>`
+  ).join('');
+  box.querySelectorAll('.sch').forEach(b=>{
+    b.onclick=async()=>{
+      const d=+b.dataset.d;
+      const next = schoolDows.includes(d)
+        ? schoolDows.filter(x=>x!==d)
+        : [...schoolDows,d];
+      if(!next.length){ toast('1つ以上 えらんでください'); return; }
+      schoolDows=next.sort();
+      renderSchool(); renderPrep();
+      const {error}=await sb.from('households')
+        .update({school_dows:schoolDows}).eq('id',householdId);
+      if(error) toast('保存エラー: '+error.message);
+    };
+  });
+}
+
 function renderSwatches(){
   ['night','morning','home','stock'].forEach(k=>{
     const box=$('sw'+k[0].toUpperCase()+k.slice(1));
@@ -718,7 +798,13 @@ function buildTimeline(){
   const homeM=toMin(times.home);
   const mornM=toMin(times.morning);
 
-  const shift = nowM<NOON ? 0 : 1;
+  // つぎの登園日まで何日あるか（土日などをとばす）
+  const isSchool=d=>schoolDows.includes(((d%7)+7)%7);
+  const findNext=from=>{
+    for(let n=from;n<from+14;n++) if(isSchool(todayDow()+n)) return n;
+    return from;
+  };
+  const shift = findNext(nowM<NOON ? 0 : 1);
   let slots=[];
 
   const push=(key,ico,title,at,dayAdd,offset,extra)=>{
@@ -727,7 +813,7 @@ function buildTimeline(){
       targetAdd:dayAdd+offset, offset, ...(extra||{})});
   };
 
-  const showTodayPickup = nowM>=NOON && nowM<EVE;
+  const showTodayPickup = nowM>=NOON && nowM<EVE && isSchool(todayDow());
   if(showTodayPickup){
     push('home','🎒','きょう もってかえる',homeM,0,0,{today:true});
   }
@@ -778,6 +864,7 @@ function renderPrep(){
     const isPast = s.at<nowM-30;
     const isNow = s.at<=nowM+30 && s.at+180>nowM;
     const leftover = isPast && list.some(i=>!checked.has(i._k));
+    const allDone  = list.every(i=>checked.has(i._k));
     const dayLbl = s.stock
       ? (s.dayAdd>0?'あした':s.dayAdd<0?'きのう':'きょう')
       : `${mdLabel(s.targetAdd)}（${DAYS[s.targetDow]}）`;
@@ -790,7 +877,8 @@ function renderPrep(){
     total+=list.length;
     done+=list.filter(i=>checked.has(i._k)).length;
 
-    html+=`<div class="slot ${s.key}${isNow?' now':''}${leftover?' left':''}">
+    html+=`<div class="slot ${s.key}${isNow?' now':''}${leftover?' left':''}${allDone?' done':''}" data-slot="${s.key}${s.today?'T':''}${s.dayAdd}">
+      ${allDone?'<div class="yosh"><span>よしっ！</span></div>':''}
       <div class="slot-head">
         <div class="sec-ico">${s.ico}</div>
         <div>
@@ -831,8 +919,16 @@ function renderPrep(){
     el.onclick=()=>{
       const k=el.dataset.k;
       const on=!checked.has(k);
+      const slotEl=el.closest('.slot');
+      const wasDone=slotEl && slotEl.classList.contains('done');
       on?checked.add(k):checked.delete(k);
       renderPrep();
+      // いま完了になった枠だけ、アニメを再生する
+      if(on && slotEl && !wasDone){
+        const id=slotEl.dataset.slot;
+        const now=document.querySelector('.slot[data-slot="'+id+'"]');
+        if(now && now.classList.contains('done')) now.classList.add('pop');
+      }
       const [slotKey,dateStr,itemId]=k.split('|');
       setCheck(slotKey,dateStr,itemId,on).catch(e=>toast('チェック保存エラー: '+(e.message||e)));
     };
@@ -1220,6 +1316,7 @@ async function start(u){
   await loadAll();
   ['tHome','tNight','tMorning'].forEach(id=>{ $(id).value=times[id.slice(1).toLowerCase()]; });
   renderSwatches();
+  renderSchool();
   renderPrep();
   refreshNotifRow();
   setTimeout(maybeShowInstall, 1200);
