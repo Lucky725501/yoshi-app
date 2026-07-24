@@ -4,6 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>よしっ</title>
+<meta name="description" content="保育園の持ち物を、前の日の夜に。もう、わすれない。">
+<meta name="theme-color" content="#FBF7F0">
+
+<!-- PWA -->
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/icon-192.png">
+
+<!-- iOS はマニフェストのアイコンを読まないので、専用のタグが要る -->
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="よしっ">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700;900&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
@@ -283,6 +296,42 @@ header{padding:26px 0 16px;display:flex;align-items:flex-end;justify-content:spa
   font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
   color:var(--ink);margin-bottom:8px;
 }
+
+/* ---- ホーム画面追加の案内 ---- */
+.sheet.ins{padding:28px 24px max(24px,env(safe-area-inset-bottom));text-align:center}
+.ins-ico{font-size:40px;line-height:1;margin-bottom:14px}
+.ins-title{
+  font-family:'Zen Maru Gothic',sans-serif;font-weight:900;
+  font-size:19px;margin-bottom:10px;
+}
+.ins-lead{
+  font-size:13.5px;line-height:1.8;color:var(--ink-soft);
+  font-weight:500;margin-bottom:22px;
+}
+.ins-lead b{color:var(--morning);font-weight:700}
+.ins-steps{list-style:none;text-align:left;margin-bottom:22px}
+.ins-steps li{
+  display:flex;align-items:center;gap:11px;
+  background:var(--card);border:1px solid var(--line);
+  border-radius:13px;padding:13px 14px;margin-bottom:7px;
+  font-size:13.5px;font-weight:500;line-height:1.5;
+}
+.ins-steps .n{
+  width:23px;height:23px;border-radius:99px;flex:none;
+  background:var(--ink);color:#fff;
+  font-family:'Zen Maru Gothic',sans-serif;font-weight:700;font-size:12px;
+  display:grid;place-items:center;
+}
+.ins-ok{
+  width:100%;font-family:'Zen Maru Gothic',sans-serif;
+  font-size:16px;font-weight:700;color:#fff;background:var(--morning);
+  border:none;border-radius:14px;padding:16px;cursor:pointer;
+}
+.ins-never{
+  width:100%;background:none;border:none;cursor:pointer;
+  font-family:'Zen Maru Gothic',sans-serif;font-weight:700;
+  font-size:13.5px;color:var(--ink-soft);padding:14px 0 2px;
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
@@ -432,6 +481,26 @@ header{padding:26px 0 16px;display:flex;align-items:flex-end;justify-content:spa
 </div><!-- /#app -->
 
 <div id="toast" class="toast"></div>
+
+<!-- ===== ホーム画面に追加の案内 ===== -->
+<div class="sheet-bg" id="install">
+  <div class="sheet ins">
+    <div class="ins-ico">📲</div>
+    <div class="ins-title">ホーム画面に おいてください</div>
+    <div class="ins-lead">
+      アプリのように ひらけて、<br>
+      <b>通知も うけとれる</b>ようになります。
+    </div>
+    <ol class="ins-steps">
+      <li><span class="n">1</span>下の <b>共有ボタン</b>（□に↑）を おす</li>
+      <li><span class="n">2</span>メニューを下に スクロール</li>
+      <li><span class="n">3</span><b>「ホーム画面に追加」</b>を おす</li>
+      <li><span class="n">4</span>右上の <b>「追加」</b>を おす</li>
+    </ol>
+    <button class="ins-ok" id="insClose">わかった</button>
+    <button class="ins-never" id="insNever">あとで</button>
+  </div>
+</div>
 
 <!-- ===== 編集シート ===== -->
 <div class="sheet-bg" id="sheet">
@@ -1046,6 +1115,7 @@ async function start(u){
   ['tHome','tNight','tMorning'].forEach(id=>{ $(id).value=times[id.slice(1).toLowerCase()]; });
   renderSwatches();
   renderPrep();
+  setTimeout(maybeShowInstall, 1200);
 }
 
 async function boot(){
@@ -1053,6 +1123,32 @@ async function boot(){
   if(data.session) await start(data.session.user);
   else setMode(false);
 }
+/* ============ PWA ============ */
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('/sw.js').catch(()=>{});
+  });
+}
+
+/* ホーム画面に追加してもらう案内（iOSのSafariでだけ出す） */
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+                  || window.navigator.standalone===true;
+const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+const isSafari = isIOS && !/CriOS|FxiOS|EdgiOS/.test(navigator.userAgent);
+
+function maybeShowInstall(){
+  if(isStandalone) return;
+  if(localStorage.getItem('yoshi.installHidden')==='1') return;
+  $('install').classList.add('open');
+}
+$('insClose').onclick=()=>{
+  $('install').classList.remove('open');
+};
+$('insNever').onclick=()=>{
+  localStorage.setItem('yoshi.installHidden','1');
+  $('install').classList.remove('open');
+};
+
 boot();
 
 setInterval(()=>{ if(nowH===null && user) renderPrep(); }, 60000);
