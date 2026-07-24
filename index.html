@@ -445,6 +445,13 @@ header{padding:26px 0 16px;display:flex;align-items:flex-end;justify-content:spa
       <div class="swatches" id="swStock"></div>
     </div>
 
+    <div class="ghead">ホーム画面</div>
+    <div class="row tap" id="insManual">
+      <div class="row-body"><div class="row-name">📲 追加のしかたを見る</div>
+      <div class="row-sub">ホーム画面への追加あんない</div></div>
+      <div class="chev">›</div>
+    </div>
+
     <div class="ghead">アカウント</div>
     <div class="row">
       <div class="row-body">
@@ -1142,11 +1149,16 @@ function maybeShowInstall(){
   $('install').classList.add('open');
 }
 $('insClose').onclick=()=>{
+  // 「わかった」：もう自動では出さない
+  localStorage.setItem('yoshi.installHidden','1');
   $('install').classList.remove('open');
 };
 $('insNever').onclick=()=>{
-  localStorage.setItem('yoshi.installHidden','1');
+  // 「あとで」：次に開いたときまた出す（何もしない）
   $('install').classList.remove('open');
+};
+$('insManual').onclick=()=>{
+  $('install').classList.add('open');
 };
 
 boot();
