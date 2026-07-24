@@ -378,26 +378,18 @@ header{padding:26px 0 16px;display:flex;align-items:flex-end;justify-content:spa
     </div>
 
     <div class="ghead">色をえらぶ</div>
-    <div class="hint">有料版では、カテゴリの色を好きに変えられます。</div>
-    <div class="row locked">
-      <div class="row-body"><div class="row-name">よるのじゅんび</div></div>
-      <div class="swatches">
-        <div class="sw on" style="background:#3D4A7A"></div>
-        <div class="sw" style="background:#5B7FA8"></div>
-        <div class="sw" style="background:#7B6BA8"></div>
-        <div class="sw" style="background:#4A8C7B"></div>
-      </div>
-      <div class="lock">有料</div>
+    <div class="hint">3つのカテゴリの色を、好きに変えられます。</div>
+    <div class="row">
+      <div class="row-body"><div class="row-name">🌙 よるのじゅんび</div></div>
+      <div class="swatches" id="swNight"></div>
     </div>
-    <div class="row locked">
-      <div class="row-body"><div class="row-name">あさのじゅんび</div></div>
-      <div class="swatches">
-        <div class="sw on" style="background:#E07A42"></div>
-        <div class="sw" style="background:#D9A03C"></div>
-        <div class="sw" style="background:#C7605C"></div>
-        <div class="sw" style="background:#D4739B"></div>
-      </div>
-      <div class="lock">有料</div>
+    <div class="row">
+      <div class="row-body"><div class="row-name">🌅 あさのじゅんび</div></div>
+      <div class="swatches" id="swMorning"></div>
+    </div>
+    <div class="row">
+      <div class="row-body"><div class="row-name">🎒 もってかえる</div></div>
+      <div class="swatches" id="swHome"></div>
     </div>
 
     <div class="ghead">アカウント</div>
@@ -485,7 +477,15 @@ async function loadAll(){
       .gte('target_date', iso(Date.now()-2*86400000)),
   ]);
 
-  if(hh.data) times={home:hh.data.time_home,night:hh.data.time_night,morning:hh.data.time_morning};
+  if(hh.data){
+    times={home:hh.data.time_home,night:hh.data.time_night,morning:hh.data.time_morning};
+    colors={
+      night:  hh.data.color_night   || PALETTE.night[0],
+      morning:hh.data.color_morning || PALETTE.morning[0],
+      home:   hh.data.color_home    || PALETTE.home[0],
+    };
+    applyColors();
+  }
 
   items=(it.data||[]).map(r=>({
     id:r.id, name:r.name, sub:r.memo||'',
@@ -548,6 +548,50 @@ async function setCheck(slotKey,dateStr,itemId,on){
       .eq('household_id',householdId).eq('target_date',dateStr)
       .eq('slot_key',slotKey).eq('item_id',itemId);
   }
+}
+
+/* ============ 色 ============ */
+const PALETTE={
+  night:  ['#3D4A7A','#4A6FA5','#6B5B95','#3F7A8C','#5A5A72'],
+  morning:['#E07A42','#D9A03C','#C7605C','#D4739B','#B8873F'],
+  home:   ['#3F8A76','#5A8C4A','#7A8C3F','#3F7A8C','#8C6B3F'],
+};
+let colors={night:PALETTE.night[0],morning:PALETTE.morning[0],home:PALETTE.home[0]};
+
+/* 濃い色から、背景用のうすい色と枠線用の色を作る */
+function mix(hex,white){
+  const n=parseInt(hex.slice(1),16);
+  const r=(n>>16)&255,g=(n>>8)&255,b=n&255;
+  const f=v=>Math.round(v+(255-v)*white);
+  return '#'+[f(r),f(g),f(b)].map(v=>v.toString(16).padStart(2,'0')).join('');
+}
+function applyColors(){
+  const root=document.documentElement.style;
+  ['night','morning','home'].forEach(k=>{
+    root.setProperty('--'+k, colors[k]);
+    root.setProperty('--'+k+'-bg',   mix(colors[k],0.90));
+    root.setProperty('--'+k+'-edge', mix(colors[k],0.66));
+  });
+}
+async function saveColors(){
+  await sb.from('households').update({
+    color_night:colors.night, color_morning:colors.morning, color_home:colors.home
+  }).eq('id',householdId);
+}
+function renderSwatches(){
+  ['night','morning','home'].forEach(k=>{
+    const box=$('sw'+k[0].toUpperCase()+k.slice(1));
+    box.innerHTML=PALETTE[k].map(c=>
+      `<div class="sw${c===colors[k]?' on':''}" data-k="${k}" data-c="${c}" style="background:${c}"></div>`
+    ).join('');
+  });
+  document.querySelectorAll('.sw').forEach(el=>{
+    el.onclick=()=>{
+      colors[el.dataset.k]=el.dataset.c;
+      applyColors(); renderSwatches(); renderPrep();
+      saveColors().catch(e=>toast('色の保存エラー: '+(e.message||e)));
+    };
+  });
 }
 
 function toast(msg){
@@ -910,13 +954,6 @@ document.querySelectorAll('.sim-btns button').forEach(b=>{
   $(id).onchange=()=>{ times[k]=$(id).value; saveTimes(); renderPrep(); };
 });
 document.querySelectorAll('.toggle').forEach(t=>{t.onclick=()=>t.classList.toggle('on')});
-document.querySelectorAll('.sw').forEach(s=>{
-  s.onclick=()=>{
-    s.parentElement.querySelectorAll('.sw').forEach(x=>x.classList.remove('on'));
-    s.classList.add('on');
-  };
-});
-
 /* ============ ログイン ============ */
 let signUpMode=false;
 
@@ -999,6 +1036,7 @@ async function start(u){
   $('app').classList.remove('hide');
   await loadAll();
   ['tHome','tNight','tMorning'].forEach(id=>{ $(id).value=times[id.slice(1).toLowerCase()]; });
+  renderSwatches();
   renderPrep();
 }
 
