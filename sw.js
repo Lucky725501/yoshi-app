@@ -2,7 +2,7 @@
    いまは「起動を速くする」役目だけ。
    通知は次のステップでここに追加する。 */
 
-const CACHE = 'yoshi-v1';
+const CACHE = 'yoshi-v2';
 const ASSETS = [
   '/',
   '/index.html',
@@ -49,5 +49,36 @@ self.addEventListener('fetch', e => {
   // アイコンなどは「まずキャッシュ」
   e.respondWith(
     caches.match(e.request).then(hit => hit || fetch(e.request))
+  );
+});
+
+
+/* ---------- 通知を受け取って表示する ---------- */
+self.addEventListener('push', e => {
+  let d = { title: 'よしっ', body: 'じゅんびの じかんです' };
+  try { if (e.data) d = { ...d, ...e.data.json() }; } catch (_) {}
+
+  e.waitUntil(
+    self.registration.showNotification(d.title, {
+      body: d.body,
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+      tag: d.tag || 'yoshi',
+      renotify: true,
+      data: { url: '/' },
+    })
+  );
+});
+
+/* ---------- 通知をタップしたらアプリを開く ---------- */
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+      for (const c of list) {
+        if ('focus' in c) return c.focus();
+      }
+      return self.clients.openWindow('/');
+    })
   );
 });

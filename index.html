@@ -144,6 +144,7 @@ header{padding:26px 0 16px;display:flex;align-items:flex-end;justify-content:spa
 .pill.on.m{background:var(--morning);color:#fff}
 .pill.on.h{background:var(--home);color:#fff}
 .pill.on.s{background:var(--stock);color:#fff}
+.pill.go{background:var(--morning);color:#fff}
 
 .time-in{font-family:'Zen Maru Gothic',sans-serif;font-weight:700;font-size:15px;border:1px solid var(--line);border-radius:10px;padding:7px 9px;background:#FCFAF6;color:var(--ink);flex:none}
 .sel-in{font-family:'Zen Maru Gothic',sans-serif;font-weight:700;font-size:13px;border:1px solid var(--line);border-radius:10px;padding:8px 9px;background:#FCFAF6;color:var(--ink);flex:none}
@@ -406,6 +407,9 @@ header{padding:26px 0 16px;display:flex;align-items:flex-end;justify-content:spa
 
   <!-- ===== 4. 設定 ===== -->
   <div id="viewSet" class="hide">
+    <div class="ghead">通知</div>
+    <div id="notifRow"></div>
+
     <div class="ghead">通知する時間</div>
     <div class="row">
       <div class="sec-ico" style="background:var(--home)">🎒</div>
@@ -1038,6 +1042,101 @@ document.querySelectorAll('.sim-btns button').forEach(b=>{
   $(id).onchange=()=>{ times[k]=$(id).value; saveTimes(); renderPrep(); };
 });
 document.querySelectorAll('.toggle').forEach(t=>{t.onclick=()=>t.classList.toggle('on')});
+/* ============ 通知 ============ */
+const VAPID_PUBLIC = 'BIV8loTCp2tG9R9oN-rCuNa6QO_65ZCcJzlWXR7ogVtTDpnUCJGOW_Vp7o7lSNB4qXWSxV_xnZX3iNt4BudN6HM';
+
+function urlB64ToU8(b64){
+  const pad='='.repeat((4-b64.length%4)%4);
+  const raw=atob((b64+pad).replace(/-/g,'+').replace(/_/g,'/'));
+  return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)));
+}
+
+function pushSupported(){
+  return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+}
+
+async function notifState(){
+  if(!pushSupported()) return 'unsupported';
+  if(!isStandalone && isIOS) return 'need-install';
+  if(Notification.permission==='denied') return 'denied';
+  if(Notification.permission!=='granted') return 'default';
+  const reg=await navigator.serviceWorker.ready;
+  const sub=await reg.pushManager.getSubscription();
+  return sub ? 'on' : 'default';
+}
+
+async function enableNotif(){
+  if(!pushSupported()){ toast('この端末では通知が つかえません'); return; }
+  if(isIOS && !isStandalone){
+    $('install').classList.add('open');
+    return;
+  }
+  const perm=await Notification.requestPermission();
+  if(perm!=='granted'){
+    toast(perm==='denied'
+      ? '設定アプリから 通知を 許可してください'
+      : '通知が 許可されませんでした');
+    await refreshNotifRow(); return;
+  }
+  try{
+    const reg=await navigator.serviceWorker.ready;
+    let sub=await reg.pushManager.getSubscription();
+    if(!sub){
+      sub=await reg.pushManager.subscribe({
+        userVisibleOnly:true,
+        applicationServerKey:urlB64ToU8(VAPID_PUBLIC),
+      });
+    }
+    const j=sub.toJSON();
+    const {error}=await sb.from('push_subs').upsert({
+      household_id:householdId, user_id:user.id,
+      endpoint:j.endpoint, p256dh:j.keys.p256dh, auth:j.keys.auth,
+    },{onConflict:'endpoint'});
+    if(error) throw error;
+    toast('通知を オンにしました');
+  }catch(e){
+    toast('通知の設定エラー: '+(e.message||e));
+  }
+  await refreshNotifRow();
+}
+
+async function disableNotif(){
+  try{
+    const reg=await navigator.serviceWorker.ready;
+    const sub=await reg.pushManager.getSubscription();
+    if(sub){
+      await sb.from('push_subs').delete().eq('endpoint',sub.endpoint);
+      await sub.unsubscribe();
+    }
+    toast('通知を オフにしました');
+  }catch(e){ toast('エラー: '+(e.message||e)); }
+  await refreshNotifRow();
+}
+
+async function refreshNotifRow(){
+  const st=await notifState();
+  const box=$('notifRow');
+  const T={
+    'on':          ['通知は オンです',        'この端末に とどきます',            'オフにする', 'on'],
+    'default':     ['通知を オンにする',      '時間になったら お知らせします',      'オンにする', ''],
+    'denied':      ['通知が ブロックされています','iPhoneの設定から 許可してください', '',          'ng'],
+    'need-install':['ホーム画面に おいてください','そのあと 通知が つかえます',       'やり方を見る',''],
+    'unsupported': ['この端末では つかえません', '',                              '',          'ng'],
+  }[st];
+  box.innerHTML=`
+    <div class="row ${T[3]==='ng'?'locked':''}">
+      <div class="row-body">
+        <div class="row-name">${T[3]==='on'?'🔔':'🔕'} ${T[0]}</div>
+        ${T[1]?`<div class="row-sub">${T[1]}</div>`:''}
+      </div>
+      ${T[2]?`<button class="pill${T[3]==='on'?'':' go'}" id="notifBtn">${T[2]}</button>`:''}
+    </div>`;
+  const b=$('notifBtn');
+  if(b) b.onclick = st==='on' ? disableNotif
+                  : st==='need-install' ? (()=>$('install').classList.add('open'))
+                  : enableNotif;
+}
+
 /* ============ ログイン ============ */
 let signUpMode=false;
 
@@ -1122,6 +1221,7 @@ async function start(u){
   ['tHome','tNight','tMorning'].forEach(id=>{ $(id).value=times[id.slice(1).toLowerCase()]; });
   renderSwatches();
   renderPrep();
+  refreshNotifRow();
   setTimeout(maybeShowInstall, 1200);
 }
 
