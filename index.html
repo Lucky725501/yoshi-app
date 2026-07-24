@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>よしっ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700;900&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#2C2A33; --ink-soft:#6B6875;
+  --paper:#FBF7F0; --card:#FFFFFF;
+  --night:#3D4A7A;   --night-bg:#EEF1FA;   --night-edge:#C9D2EC;
+  --morning:#E07A42; --morning-bg:#FDF1E8; --morning-edge:#F5D2B8;
+  --home:#3F8A76;    --home-bg:#E8F3F0;    --home-edge:#BEDDD4;
+  --stock:#8A6BA8;   --stock-bg:#F2ECF7;   --stock-edge:#D9C9E8;
+  --line:#E8E2D8; --done:#B8B3AA;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{
+  font-family:'Zen Kaku Gothic New',sans-serif;
+  background:var(--paper);color:var(--ink);
+  min-height:100vh;padding-bottom:98px;-webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:520px;margin:0 auto;padding:0 20px}
+
+header{padding:26px 0 16px;display:flex;align-items:flex-end;justify-content:space-between;gap:16px}
+.brand{font-family:'Zen Maru Gothic',sans-serif;font-weight:900;font-size:25px;letter-spacing:.06em;line-height:1}
+.brand span{color:var(--morning)}
+.datechip{text-align:right;line-height:1.35}
+.datechip .lbl{font-size:10.5px;color:var(--ink-soft);letter-spacing:.13em;font-weight:700}
+.datechip .val{font-family:'Zen Maru Gothic',sans-serif;font-weight:700;font-size:16px}
+
+.sim{background:#F1EDE5;border:1px dashed #D4CCBE;border-radius:14px;padding:11px 13px;margin-bottom:18px;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.sim-lbl{font-size:10.5px;font-weight:700;color:var(--ink-soft);letter-spacing:.06em;flex:none}
+.sim-btns{display:flex;gap:4px;margin-left:auto}
+.sim-btns button{font-family:'Zen Maru Gothic',sans-serif;font-size:11px;font-weight:700;padding:6px 9px;border-radius:8px;background:#fff;color:var(--ink-soft);border:1px solid var(--line);cursor:pointer}
+.sim-btns button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+.progress-card{background:var(--card);border-radius:20px;padding:17px 20px;border:1px solid var(--line);margin-bottom:20px}
+.progress-top{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:11px}
+.progress-msg{font-family:'Zen Maru Gothic',sans-serif;font-weight:700;font-size:15px}
+.progress-count{font-family:'Zen Maru Gothic',sans-serif;font-weight:900;font-size:14px;color:var(--ink-soft)}
+.progress-count b{font-size:23px;color:var(--ink)}
+.bar{height:8px;background:#EFEAE1;border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;width:0%;background:var(--morning);border-radius:99px;transition:width .45s cubic-bezier(.34,1.3,.64,1)}
+
+/* ---- timeline slot ---- */
+.slot{border-radius:20px;padding:14px 15px 15px;margin-bottom:12px;border:1px solid;position:relative}
+.slot.night  {background:var(--night-bg);   border-color:var(--night-edge)}
+.slot.morning{background:var(--morning-bg); border-color:var(--morning-edge)}
+.slot.home   {background:var(--home-bg);    border-color:var(--home-edge)}
+.slot.stock  {background:var(--stock-bg);   border-color:var(--stock-edge)}
+
+.slot-head{display:flex;align-items:center;gap:9px;margin-bottom:11px;padding:0 3px}
+.sec-ico{width:27px;height:27px;border-radius:9px;display:grid;place-items:center;font-size:14px;flex:none}
+.night .sec-ico{background:var(--night)} .morning .sec-ico{background:var(--morning)}
+.home .sec-ico{background:var(--home)}   .stock .sec-ico{background:var(--stock)}
+.slot-title{font-family:'Zen Maru Gothic',sans-serif;font-weight:700;font-size:15.5px;line-height:1.25}
+.slot-when{font-size:11px;font-weight:600;margin-top:2px;opacity:.8}
+.night .slot-title,.night .slot-when{color:var(--night)}
+.morning .slot-title,.morning .slot-when{color:var(--morning)}
+.home .slot-title,.home .slot-when{color:var(--home)}
+.stock .slot-title,.stock .slot-when{color:var(--stock)}
+.slot-badge{margin-left:auto;font-family:'Zen Maru Gothic',sans-serif;font-size:11px;font-weight:700;padding:5px 10px;border-radius:8px;flex:none;background:rgba(255,255,255,.75)}
+.night .slot-badge{color:var(--night)} .morning .slot-badge{color:var(--morning)}
+.home .slot-badge{color:var(--home)}   .stock .slot-badge{color:var(--stock)}
+.slot.now::before{
+  content:'いま';position:absolute;top:-9px;left:15px;
+  font-family:'Zen Maru Gothic',sans-serif;font-size:10px;font-weight:700;
+  color:#fff;padding:3px 9px;border-radius:99px;letter-spacing:.06em;
+}
+.slot.now.night::before{background:var(--night)}
+.slot.now.morning::before{background:var(--morning)}
+.slot.now.home::before{background:var(--home)}
+.slot.now.stock::before{background:var(--stock)}
+
+/* やり残し */
+.slot.left{background:#FDF0EF;border-color:#F0C9C4}
+.slot.left::before{
+  content:'まだの ぶん';position:absolute;top:-9px;left:15px;
+  font-family:'Zen Maru Gothic',sans-serif;font-size:10px;font-weight:700;
+  color:#fff;background:#C4584C;padding:3px 9px;border-radius:99px;letter-spacing:.04em;
+}
+.slot.left .sec-ico{background:#C4584C}
+.slot.left .slot-title,.slot.left .slot-when,.slot.left .slot-badge{color:#C4584C}
+.slot.left .item{border-left-color:#C4584C}
+.slot.left .item.on .check{background:#C4584C;border-color:#C4584C}
+
+.list{display:flex;flex-direction:column;gap:7px}
+.item{display:flex;align-items:center;gap:13px;background:var(--card);border-radius:14px;padding:14px 16px;cursor:pointer;transition:transform .12s ease,opacity .2s ease;user-select:none;border-left:4px solid}
+.night .item{border-left-color:var(--night)} .morning .item{border-left-color:var(--morning)}
+.home .item{border-left-color:var(--home)}   .stock .item{border-left-color:var(--stock)}
+.item:active{transform:scale(.985)}
+.check{width:25px;height:25px;border-radius:8px;border:2px solid #DDD7CC;flex:none;display:grid;place-items:center;transition:.2s}
+.check svg{width:13px;height:13px;opacity:0;transform:scale(.5);transition:.2s cubic-bezier(.34,1.5,.64,1)}
+.item-body{flex:1;min-width:0}
+.item-name{font-family:'Zen Maru Gothic',sans-serif;font-weight:700;font-size:15.5px;line-height:1.4}
+.item-sub{font-size:11.5px;color:var(--ink-soft);margin-top:3px;font-weight:500}
+.tag{font-size:10px;font-weight:700;padding:4px 8px;border-radius:6px;flex:none}
+.tag.spot{background:#FBEBEE;color:#BE4A5D}
+.item.on{opacity:.5;border-left-color:#D8D2C8 !important}
+.item.on .item-name{color:var(--done);text-decoration:line-through;text-decoration-thickness:1.5px}
+.item.on .check svg{opacity:1;transform:scale(1)}
+.night .item.on .check{background:var(--night);border-color:var(--night)}
+.morning .item.on .check{background:var(--morning);border-color:var(--morning)}
+.home .item.on .check{background:var(--home);border-color:var(--home)}
+.stock .item.on .check{background:var(--stock);border-color:var(--stock)}
+
+.week{display:flex;gap:6px;margin-bottom:20px}
+.day{flex:1;text-align:center;padding:9px 0 8px;border-radius:12px;background:var(--card);border:1px solid var(--line);cursor:pointer;transition:.15s}
+.day .d{font-family:'Zen Maru Gothic',sans-serif;font-weight:700;font-size:13px}
+.day .n{font-size:10px;color:var(--ink-soft);margin-top:3px;font-weight:600}
+.day.sel{background:var(--ink);border-color:var(--ink)}
+.day.sel .d{color:#fff} .day.sel .n{color:rgba(255,255,255,.65)}
+
+.row{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:15px;padding:14px 16px;margin-bottom:7px}
+.row-name{font-family:'Zen Maru Gothic',sans-serif;font-weight:700;font-size:15px}
+.row-sub{font-size:11.5px;color:var(--ink-soft);margin-top:2px;font-weight:500}
+.row-body{flex:1;min-width:0}
+.chev{color:#C6C0B5;font-size:17px;flex:none}
+.row.tap{cursor:pointer;transition:transform .12s}
+.row.tap:active{transform:scale(.99)}
+.row.locked{opacity:.62}
+.lock{font-size:10px;font-weight:700;background:#F3EAD9;color:#9A7B3F;padding:4px 8px;border-radius:6px;flex:none}
+
+.pill-group{display:flex;gap:4px;flex:none}
+.pill{font-family:'Zen Maru Gothic',sans-serif;font-size:11px;font-weight:700;padding:6px 9px;border-radius:9px;background:#F2EEE7;color:var(--ink-soft);border:none;cursor:pointer;transition:.15s}
+.pill.on.n{background:var(--night);color:#fff}
+.pill.on.m{background:var(--morning);color:#fff}
+.pill.on.h{background:var(--home);color:#fff}
+.pill.on.s{background:var(--stock);color:#fff}
+
+.time-in{font-family:'Zen Maru Gothic',sans-serif;font-weight:700;font-size:15px;border:1px solid var(--line);border-radius:10px;padding:7px 9px;background:#FCFAF6;color:var(--ink);flex:none}
+.sel-in{font-family:'Zen Maru Gothic',sans-serif;font-weight:700;font-size:13px;border:1px solid var(--line);border-radius:10px;padding:8px 9px;background:#FCFAF6;color:var(--ink);flex:none}
+.toggle{width:46px;height:27px;border-radius:99px;background:#DDD7CC;flex:none;cursor:pointer;position:relative;transition:.2s;border:none}
+.toggle::after{content:'';position:absolute;top:3px;left:3px;width:21px;height:21px;border-radius:99px;background:#fff;transition:.22s cubic-bezier(.34,1.4,.64,1)}
+.toggle.on{background:var(--home)} .toggle.on::after{left:22px}
+
+.swatches{display:flex;gap:5px;flex:none}
+.sw{width:22px;height:22px;border-radius:7px;border:2px solid transparent;cursor:pointer;transition:.15s}
+.sw.on{border-color:var(--ink);transform:scale(1.12)}
+
+.ghead{font-family:'Zen Maru Gothic',sans-serif;font-size:12px;font-weight:700;color:var(--ink-soft);letter-spacing:.1em;padding:0 4px 9px;margin-top:24px}
+.ghead:first-child{margin-top:0}
+.hint{font-size:12.5px;color:var(--ink-soft);line-height:1.75;padding:0 4px;margin-bottom:16px;font-weight:500}
+.empty{text-align:center;padding:26px 20px;color:var(--ink-soft);font-size:13px;line-height:1.7;font-weight:500}
+.hide{display:none}
+
+.nav{position:fixed;bottom:0;left:0;right:0;background:rgba(251,247,240,.95);backdrop-filter:blur(14px);border-top:1px solid var(--line);padding:9px 0 max(9px,env(safe-area-inset-bottom))}
+.nav-in{max-width:520px;margin:0 auto;display:flex}
+.nav button{flex:1;background:none;border:none;font-family:'Zen Maru Gothic',sans-serif;font-weight:700;font-size:10.5px;color:var(--ink-soft);padding:5px 0;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px}
+.nav button .ico{font-size:18px;line-height:1}
+.nav button.on{color:var(--ink)}
+
+/* ---- 編集シート ---- */
+.sheet-bg{
+  position:fixed;inset:0;background:rgba(44,42,51,.42);
+  backdrop-filter:blur(3px);
+  display:flex;align-items:flex-end;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .22s;z-index:50;
+}
+.sheet-bg.open{opacity:1;pointer-events:auto}
+.sheet{
+  width:100%;max-width:520px;background:var(--paper);
+  border-radius:24px 24px 0 0;padding:0 20px max(20px,env(safe-area-inset-bottom));
+  transform:translateY(20px);transition:transform .26s cubic-bezier(.32,1.2,.5,1);
+  max-height:88vh;overflow-y:auto;
+}
+.sheet-bg.open .sheet{transform:translateY(0)}
+.sheet-head{
+  display:flex;align-items:center;gap:12px;
+  padding:16px 0 14px;position:sticky;top:0;background:var(--paper);
+  border-bottom:1px solid var(--line);margin-bottom:18px;z-index:2;
+}
+.sheet-title{
+  flex:1;text-align:center;
+  font-family:'Zen Maru Gothic',sans-serif;font-weight:700;font-size:16px;
+}
+.sh-btn{
+  background:none;border:none;cursor:pointer;flex:none;
+  font-family:'Zen Maru Gothic',sans-serif;font-weight:700;font-size:14px;
+  color:var(--ink-soft);padding:6px 2px;
+}
+.sh-btn.primary{color:var(--morning)}
+.sheet-body{padding-bottom:8px}
+.fld{display:block;margin-bottom:20px}
+.fld>span{
+  display:block;font-family:'Zen Maru Gothic',sans-serif;
+  font-size:12.5px;font-weight:700;color:var(--ink-soft);
+  margin-bottom:8px;letter-spacing:.04em;
+}
+.fld>span em{
+  font-style:normal;font-weight:500;font-size:11.5px;
+  color:#A9A296;margin-left:8px;letter-spacing:0;
+}
+.opt-row.multi .opt.on{background:var(--stock);border-color:var(--stock);color:#fff}
+.fld input[type=text],.fld input[type=number]{
+  width:100%;font-family:'Zen Kaku Gothic New',sans-serif;
+  font-size:16px;font-weight:500;color:var(--ink);
+  background:var(--card);border:1px solid var(--line);
+  border-radius:13px;padding:13px 15px;
+}
+.fld input[type=number]{width:90px;display:inline-block}
+.fld input:focus{outline:2px solid var(--morning);outline-offset:-1px}
+.opt-row{display:flex;flex-wrap:wrap;gap:7px}
+.opt{
+  font-family:'Zen Maru Gothic',sans-serif;
+  font-size:13.5px;font-weight:700;
+  padding:10px 15px;border-radius:12px;
+  background:var(--card);border:1px solid var(--line);
+  color:var(--ink-soft);cursor:pointer;transition:.15s;
+}
+.opt.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.opt.w-night.on{background:var(--night);border-color:var(--night)}
+.opt.w-morning.on{background:var(--morning);border-color:var(--morning)}
+.opt.w-home.on{background:var(--home);border-color:var(--home)}
+.sh-del{
+  width:100%;background:none;border:none;cursor:pointer;
+  font-family:'Zen Maru Gothic',sans-serif;font-weight:700;font-size:14px;
+  color:#C4483A;padding:15px 0 6px;
+}
+
+/* ---- ログイン ---- */
+.auth{
+  position:fixed;inset:0;background:var(--paper);
+  display:flex;align-items:center;justify-content:center;
+  padding:24px;z-index:60;
+}
+.auth.hide{display:none}
+.auth-box{width:100%;max-width:360px}
+.auth-logo{
+  font-family:'Zen Maru Gothic',sans-serif;font-weight:900;
+  font-size:44px;letter-spacing:.06em;text-align:center;line-height:1;
+}
+.auth-logo span{color:var(--morning)}
+.auth-tag{
+  text-align:center;color:var(--ink-soft);
+  font-size:13.5px;font-weight:600;margin:12px 0 34px;letter-spacing:.05em;
+}
+.auth input{
+  width:100%;font-family:'Zen Kaku Gothic New',sans-serif;
+  font-size:16px;font-weight:500;color:var(--ink);
+  background:var(--card);border:1px solid var(--line);
+  border-radius:14px;padding:15px 16px;margin-bottom:10px;
+}
+.auth input:focus{outline:2px solid var(--morning);outline-offset:-1px}
+.auth-go{
+  width:100%;font-family:'Zen Maru Gothic',sans-serif;
+  font-size:16px;font-weight:700;color:#fff;background:var(--morning);
+  border:none;border-radius:14px;padding:16px;margin-top:6px;cursor:pointer;
+  transition:.15s;
+}
+.auth-go:active{transform:scale(.99)}
+.auth-go:disabled{opacity:.55}
+.auth-switch{
+  text-align:center;margin-top:20px;
+  font-size:13px;color:var(--ink-soft);font-weight:500;
+}
+.auth-switch button{
+  background:none;border:none;cursor:pointer;
+  font-family:'Zen Maru Gothic',sans-serif;font-weight:700;
+  font-size:13.5px;color:var(--morning);padding:6px;
+}
+#aMsg{display:block;margin-bottom:2px;min-height:18px;color:#C4483A}
+
+/* ---- トースト ---- */
+.toast{
+  position:fixed;left:50%;bottom:96px;transform:translate(-50%,14px);
+  background:var(--ink);color:#fff;
+  font-family:'Zen Maru Gothic',sans-serif;font-size:13.5px;font-weight:700;
+  padding:12px 20px;border-radius:12px;
+  opacity:0;pointer-events:none;transition:.25s;z-index:80;
+  max-width:90vw;text-align:center;
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+<!-- ===== ログイン ===== -->
+<div id="auth" class="auth">
+  <div class="auth-box">
+    <div class="auth-logo">よし<span>っ</span></div>
+    <div class="auth-tag">もう、わすれない。</div>
+    <input id="aMail" type="email" inputmode="email" autocomplete="email" placeholder="メールアドレス">
+    <input id="aPass" type="password" autocomplete="current-password" placeholder="パスワード（6文字いじょう）">
+    <button id="aGo" class="auth-go">はじめる</button>
+    <div class="auth-switch">
+      <span id="aMsg"></span>
+      <button id="aToggle">アカウントを つくる</button>
+    </div>
+  </div>
+</div>
+
+<div id="app" class="hide">
+<div class="wrap">
+  <header>
+    <div class="brand">よし<span>っ</span></div>
+    <div class="datechip">
+      <div class="lbl" id="dLabel">これから24時間</div>
+      <div class="val" id="dVal"></div>
+    </div>
+  </header>
+
+  <!-- ===== 1. じゅんび ===== -->
+  <div id="viewPrep">
+    <div class="sim">
+      <div class="sim-lbl">動作かくにん</div>
+      <div class="sim-btns">
+        <button class="on" data-h="">いま</button>
+        <button data-h="7">7時</button>
+        <button data-h="11">11時</button>
+        <button data-h="15">15時</button>
+        <button data-h="21">21時</button>
+      </div>
+    </div>
+
+    <div class="progress-card">
+      <div class="progress-top">
+        <div class="progress-msg" id="pMsg"></div>
+        <div class="progress-count"><b id="pDone">0</b> / <span id="pAll">0</span></div>
+      </div>
+      <div class="bar"><i id="pBar"></i></div>
+    </div>
+
+    <div id="timeline"></div>
+  </div>
+
+  <!-- ===== 2. 曜日ごと ===== -->
+  <div id="viewWeek" class="hide">
+    <div class="week" id="weekStrip"></div>
+    <div class="hint" id="weekHint"></div>
+    <div id="listWeek"></div>
+  </div>
+
+  <!-- ===== 3. 持ち物 ===== -->
+  <div id="viewItems" class="hide">
+    <div class="hint">持ち物ごとに、いつ準備するかを決められます。</div>
+    <div id="itemsList"></div>
+
+    <div class="ghead">ストックの確認</div>
+    <div class="hint">
+      切らすと困るものを登録すると、決めたタイミングで残りを確認する通知がきます。
+    </div>
+    <div id="stockList"></div>
+  </div>
+
+  <!-- ===== 4. 設定 ===== -->
+  <div id="viewSet" class="hide">
+    <div class="ghead">通知する時間</div>
+    <div class="row">
+      <div class="sec-ico" style="background:var(--home)">🎒</div>
+      <div class="row-body"><div class="row-name">もってかえる</div><div class="row-sub">お迎えの前に</div></div>
+      <input class="time-in" type="time" value="16:30" id="tHome">
+      <button class="toggle on"></button>
+    </div>
+    <div class="row">
+      <div class="sec-ico" style="background:var(--night)">🌙</div>
+      <div class="row-body"><div class="row-name">よるのじゅんび</div><div class="row-sub">ねる前に</div></div>
+      <input class="time-in" type="time" value="20:00" id="tNight">
+      <button class="toggle on"></button>
+    </div>
+    <div class="row">
+      <div class="sec-ico" style="background:var(--morning)">🌅</div>
+      <div class="row-body"><div class="row-name">あさのじゅんび</div><div class="row-sub">出かける前に</div></div>
+      <input class="time-in" type="time" value="07:00" id="tMorning">
+      <button class="toggle on"></button>
+    </div>
+
+    <div class="ghead">色をえらぶ</div>
+    <div class="hint">有料版では、カテゴリの色を好きに変えられます。</div>
+    <div class="row locked">
+      <div class="row-body"><div class="row-name">よるのじゅんび</div></div>
+      <div class="swatches">
+        <div class="sw on" style="background:#3D4A7A"></div>
+        <div class="sw" style="background:#5B7FA8"></div>
+        <div class="sw" style="background:#7B6BA8"></div>
+        <div class="sw" style="background:#4A8C7B"></div>
+      </div>
+      <div class="lock">有料</div>
+    </div>
+    <div class="row locked">
+      <div class="row-body"><div class="row-name">あさのじゅんび</div></div>
+      <div class="swatches">
+        <div class="sw on" style="background:#E07A42"></div>
+        <div class="sw" style="background:#D9A03C"></div>
+        <div class="sw" style="background:#C7605C"></div>
+        <div class="sw" style="background:#D4739B"></div>
+      </div>
+      <div class="lock">有料</div>
+    </div>
+
+    <div class="ghead">アカウント</div>
+    <div class="row">
+      <div class="row-body">
+        <div class="row-name" id="setMail">—</div>
+        <div class="row-sub">ログイン中</div>
+      </div>
+      <button class="pill" id="btnOut">ログアウト</button>
+    </div>
+
+    <div class="ghead">これから作る機能</div>
+    <div class="row tap"><div class="row-body"><div class="row-name">📸 おたよりを読みこむ</div>
+      <div class="row-sub">写真から持ち物を自動で登録</div></div><div class="chev">›</div></div>
+    <div class="row tap"><div class="row-body"><div class="row-name">👥 パートナーと共有</div>
+      <div class="row-sub">同じリストを2人で確認</div></div><div class="chev">›</div></div>
+  </div>
+</div>
+
+<nav class="nav">
+  <div class="nav-in">
+    <button class="on" data-v="Prep"><span class="ico">✅</span>じゅんび</button>
+    <button data-v="Week"><span class="ico">🗓</span>曜日ごと</button>
+    <button data-v="Items"><span class="ico">🧺</span>持ち物</button>
+    <button data-v="Set"><span class="ico">⚙️</span>設定</button>
+  </div>
+</nav>
+</div><!-- /#app -->
+
+<div id="toast" class="toast"></div>
+
+<!-- ===== 編集シート ===== -->
+<div class="sheet-bg" id="sheet">
+  <div class="sheet">
+    <div class="sheet-head">
+      <button class="sh-btn" id="shCancel">やめる</button>
+      <div class="sheet-title" id="shTitle"></div>
+      <button class="sh-btn primary" id="shSave">ほぞん</button>
+    </div>
+    <div class="sheet-body" id="shBody"></div>
+    <button class="sh-del" id="shDel">この項目を けす</button>
+  </div>
+</div>
+
+<script>
+const DAYS=['日','月','火','水','木','金','土'];
+const D0=7; // 10月7日(火)を「きょう」とする
+
+/* ============ Supabase ============ */
+const SB_URL = 'https://ulunnpcdkvnvtuvlwhbs.supabase.co';
+const SB_KEY = 'sb_publishable_5YFBvFLeMM0ueSt77pbpBg_ekWPb7-L';
+const sb = supabase.createClient(SB_URL, SB_KEY);
+
+let user=null, householdId=null;
+let items=[], stocks=[], checked=new Set();
+let times={home:'16:30',night:'20:00',morning:'07:00'};
+
+const iso=d=>{const x=new Date(d);return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`};
+
+/* チェックのキー：枠キー＋対象日＋持ち物id
+   これで「いつの・どの枠の」チェックかを一意に表せる */
+const ckey=(slotKey,dateStr,itemId)=>slotKey+'|'+dateStr+'|'+itemId;
+
+async function loadAll(){
+  // 世帯を特定
+  const {data:mem} = await sb.from('household_members')
+    .select('household_id').eq('user_id',user.id).limit(1);
+  if(!mem || !mem.length){ toast('世帯が見つかりません'); return; }
+  householdId = mem[0].household_id;
+
+  const [hh, it, st, ck] = await Promise.all([
+    sb.from('households').select('*').eq('id',householdId).single(),
+    sb.from('items').select('*').eq('household_id',householdId).order('sort_order'),
+    sb.from('stocks').select('*').eq('household_id',householdId).order('created_at'),
+    sb.from('checks').select('*').eq('household_id',householdId)
+      .gte('target_date', iso(Date.now()-2*86400000)),
+  ]);
+
+  if(hh.data) times={home:hh.data.time_home,night:hh.data.time_night,morning:hh.data.time_morning};
+
+  items=(it.data||[]).map(r=>({
+    id:r.id, name:r.name, sub:r.memo||'',
+    day: r.day==='daily'?'daily':+r.day,
+    when:r.when_slot, spot:r.is_spot, spotDate:r.spot_date
+  }));
+  stocks=(st.data||[]).map(r=>({
+    id:r.id, name:r.name, sub:r.memo||'', dows:r.dows||[], hour:r.hour
+  }));
+  checked=new Set((ck.data||[]).map(r=>ckey(r.slot_key,r.target_date,r.item_id)));
+}
+
+async function saveTimes(){
+  await sb.from('households').update({
+    time_home:times.home, time_night:times.night, time_morning:times.morning
+  }).eq('id',householdId);
+}
+
+async function saveItem(it){
+  const row={
+    household_id:householdId, name:it.name, memo:it.sub||'',
+    day:String(it.day), when_slot:it.when
+  };
+  if(it.id && String(it.id).length>20){
+    await sb.from('items').update(row).eq('id',it.id);
+  }else{
+    const {data}=await sb.from('items').insert(row).select().single();
+    if(data) it.id=data.id;
+  }
+}
+const delItem  = id => sb.from('items').delete().eq('id',id);
+
+async function saveStock(st){
+  const row={
+    household_id:householdId, name:st.name, memo:st.sub||'',
+    dows:st.dows, hour:st.hour
+  };
+  if(st.id && String(st.id).length>20){
+    await sb.from('stocks').update(row).eq('id',st.id);
+  }else{
+    const {data}=await sb.from('stocks').insert(row).select().single();
+    if(data) st.id=data.id;
+  }
+}
+const delStock = id => sb.from('stocks').delete().eq('id',id);
+
+async function setCheck(slotKey,dateStr,itemId,on){
+  if(on){
+    await sb.from('checks').upsert({
+      household_id:householdId, target_date:dateStr,
+      slot_key:slotKey, item_id:itemId, checked_by:user.id
+    });
+  }else{
+    await sb.from('checks').delete()
+      .eq('household_id',householdId).eq('target_date',dateStr)
+      .eq('slot_key',slotKey).eq('item_id',itemId);
+  }
+}
+
+function toast(msg){
+  const t=$('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('show'),2600);
+}
+
+/* ============ 日付 ============ */
+const now=()=>new Date();
+const todayDow=()=>now().getDay();
+const dateOf=add=>{const d=now();d.setDate(d.getDate()+add);return d};
+const mdLabel=add=>{const d=dateOf(add);return `${d.getMonth()+1}月${d.getDate()}日`};
+
+let nowH=null; // null = 実時刻を使う
+const curH=()=>nowH!==null?nowH:now().getHours();
+
+const $=id=>document.getElementById(id);
+const forDay=d=>items.filter(i=>i.day==='daily'||i.day===d);
+const tick=()=>'<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+const toMin=v=>{const[a,b]=v.split(':').map(Number);return a*60+b};
+const fmt=m=>{const t=((m%1440)+1440)%1440;return `${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}`};
+
+/* ---- 表示ルール ----
+   原則：つぎの登園日についての3カテゴリを常に表示
+     ① よるのじゅんび（前日夜）
+     ② あさのじゅんび（当日朝）
+     ③ もってかえる  （当日の帰り）
+   カットオフは正午。
+     0:00〜12:00  → つぎの登園日 = きょう（夜枠はきのうの夜）
+     12:00〜24:00 → つぎの登園日 = あした
+   例外：12:00〜20:00 のみ、きょうの帰りの持ち帰りを冒頭に追加（4カテゴリ）*/
+function buildTimeline(){
+  const nowM=curH()*60;
+  const NOON=12*60, EVE=20*60;
+  const nightM=toMin(times.night);
+  const homeM=toMin(times.home);
+  const mornM=toMin(times.morning);
+
+  const shift = nowM<NOON ? 0 : 1;
+  let slots=[];
+
+  const push=(key,ico,title,at,dayAdd,offset,extra)=>{
+    slots.push({key,ico,title,at,dayAdd,
+      targetDow:((todayDow()+dayAdd+offset)%7+7)%7,
+      targetAdd:dayAdd+offset, offset, ...(extra||{})});
+  };
+
+  const showTodayPickup = nowM>=NOON && nowM<EVE;
+  if(showTodayPickup){
+    push('home','🎒','きょう もってかえる',homeM,0,0,{today:true});
+  }
+
+  push('night','🌙','よるのじゅんび',  nightM+(shift-1)*1440, shift-1, 1);
+  push('morning','🌅','あさのじゅんび', mornM+shift*1440,     shift,   0);
+  push('home','🎒','もってかえる',      homeM+shift*1440,     shift,   0);
+
+  stocks.forEach(s=>{
+    for(let dayAdd=shift-1;dayAdd<=shift;dayAdd++){
+      const dow=((todayDow()+dayAdd)%7+7)%7;
+      if(!(s.dows||[]).includes(dow))continue;
+      slots.push({key:'stock',ico:'🧴',title:'ストックの確認',
+        at:s.hour*60+dayAdd*1440,dayAdd,stock:true});
+    }
+  });
+
+  const merged=[];
+  slots.forEach(s=>{
+    const last=merged[merged.length-1];
+    if(s.stock&&last&&last.stock&&last.at===s.at)return;
+    merged.push(s);
+  });
+  return merged;
+}
+
+function slotItems(s){
+  if(s.stock){
+    const dow=((todayDow()+s.dayAdd)%7+7)%7;
+    const ds=iso(dateOf(s.dayAdd));
+    return stocks.filter(x=>(x.dows||[]).includes(dow))
+      .map(x=>({...x,_k:ckey('stock',ds,x.id),_slot:'stock',_date:ds}));
+  }
+  const slotKey=s.key+(s.today?'T':'');
+  const ds=iso(dateOf(s.targetAdd));
+  return forDay(s.targetDow).filter(i=>i.when===s.key)
+    .map(i=>({...i,_k:ckey(slotKey,ds,i.id),_slot:slotKey,_date:ds}));
+}
+
+function renderPrep(){
+  const slots=buildTimeline();
+  const nowM=curH()*60;
+  let html='',total=0,done=0;
+
+  slots.forEach((s,idx)=>{
+    const list=slotItems(s);
+    if(!list.length)return;
+    const isPast = s.at<nowM-30;
+    const isNow = s.at<=nowM+30 && s.at+180>nowM;
+    const leftover = isPast && list.some(i=>!checked.has(i._k));
+    const dayLbl = s.stock
+      ? (s.dayAdd>0?'あした':s.dayAdd<0?'きのう':'きょう')
+      : `${mdLabel(s.targetAdd)}（${DAYS[s.targetDow]}）`;
+    const sub = s.stock ? ''
+      : s.today ? 'きょう のお迎え'
+      : s.key==='home' ? `${dayLbl} のお迎え`
+      : `${dayLbl} に持っていく`;
+    const timeLbl = (s.dayAdd<0?'きのう ':'')+fmt(s.at);
+
+    total+=list.length;
+    done+=list.filter(i=>checked.has(i._k)).length;
+
+    html+=`<div class="slot ${s.key}${isNow?' now':''}${leftover?' left':''}">
+      <div class="slot-head">
+        <div class="sec-ico">${s.ico}</div>
+        <div>
+          <div class="slot-title">${s.title}</div>
+          ${sub?`<div class="slot-when">${sub}</div>`:''}
+        </div>
+        <div class="slot-badge">${timeLbl}</div>
+      </div>
+      <div class="list">${list.map(i=>{
+        const on=checked.has(i._k)?' on':'';
+        const tag=i.spot?'<span class="tag spot">おたより</span>':'';
+        return `<div class="item${on}" data-k="${i._k}">
+          <div class="check">${tick()}</div>
+          <div class="item-body">
+            <div class="item-name">${i.name}</div>
+            <div class="item-sub">${i.sub}</div>
+          </div>${tag}</div>`;
+      }).join('')}</div>
+    </div>`;
+  });
+
+  $('timeline').innerHTML=html||'<div class="empty">じゅんびは ありません</div>';
+
+  $('pDone').textContent=done; $('pAll').textContent=total;
+  $('pBar').style.width=(total?done/total*100:0)+'%';
+  const left=total-done;
+  $('pMsg').textContent = !total?'じゅんびは ありません'
+    : left===0?'ぜんぶ そろいました 🎉'
+    : left===total?`これから ${total}つ`:`あと ${left}つ`;
+
+  const NOON=12*60, EVE=20*60;
+  const shift = nowM<NOON ? 0 : 1;
+  const four = nowM>=NOON && nowM<EVE;
+  $('dLabel').textContent = four ? 'きょうの帰り ＋ つぎの登園' : 'つぎの登園日';
+  $('dVal').textContent = `${mdLabel(shift)}（${DAYS[((todayDow()+shift)%7+7)%7]}）`;
+
+  document.querySelectorAll('#viewPrep .item').forEach(el=>{
+    el.onclick=()=>{
+      const k=el.dataset.k;
+      const on=!checked.has(k);
+      on?checked.add(k):checked.delete(k);
+      renderPrep();
+      const [slotKey,dateStr,itemId]=k.split('|');
+      setCheck(slotKey,dateStr,itemId,on).catch(()=>toast('保存できませんでした'));
+    };
+  });
+}
+
+let selDay=3;
+function renderWeek(){
+  $('weekStrip').innerHTML=[1,2,3,4,5].map(d=>{
+    const n=forDay(d).filter(i=>i.when!=='home').length;
+    return `<div class="day${d===selDay?' sel':''}" data-d="${d}">
+      <div class="d">${DAYS[d]}</div><div class="n">${n}こ</div></div>`;
+  }).join('');
+  const list=forDay(selDay);
+  const only=list.filter(i=>i.day!=='daily');
+  $('weekHint').textContent=only.length?`${DAYS[selDay]}曜だけの持ち物が ${only.length}つ`:`${DAYS[selDay]}曜は 毎日のものだけ`;
+  const g=(w,ico,label)=>{
+    const arr=list.filter(i=>i.when===w);
+    if(!arr.length)return '';
+    return `<div class="slot ${w}"><div class="slot-head">
+      <div class="sec-ico">${ico}</div><div class="slot-title">${label}</div></div>
+      <div class="list">${arr.map(it=>`<div class="item" style="cursor:default">
+        <div class="item-body"><div class="item-name">${it.name}</div>
+        <div class="item-sub">${it.sub}</div></div>
+        ${it.spot?'<span class="tag spot">おたより</span>':''}</div>`).join('')}</div></div>`;
+  };
+  $('listWeek').innerHTML=g('night','🌙','よるのうちに')+g('morning','🌅','あさに')+g('home','🎒','もってかえる');
+  document.querySelectorAll('.day').forEach(el=>{el.onclick=()=>{selDay=+el.dataset.d;renderWeek()}});
+}
+
+function dayLabel(d){ return d==='daily'?'毎日':DAYS[d]+'曜'; }
+function dowsLabel(ds){
+  const a=(ds||[]).slice().sort((x,y)=>((x+6)%7)-((y+6)%7));
+  if(!a.length) return '曜日 みせんたく';
+  if(a.length===7) return '毎日';
+  return '毎週'+a.map(d=>DAYS[d]).join('・')+'曜';
+}
+
+function renderItems(){
+  const g=(w,label,ico)=>{
+    const arr=items.filter(i=>i.when===w);
+    return `<div class="ghead">${ico} ${label}</div>`+
+      (arr.length?arr.map(it=>`
+      <div class="row tap edit-item" data-id="${it.id}">
+        <div class="row-body">
+          <div class="row-name">${it.name}</div>
+          <div class="row-sub">${dayLabel(it.day)}${it.sub?' ・ '+it.sub:''}</div>
+        </div><div class="chev">›</div></div>`).join('')
+      :`<div class="row" style="opacity:.55"><div class="row-body">
+         <div class="row-sub">まだありません</div></div></div>`);
+  };
+  $('itemsList').innerHTML=
+    g('night','よるのうちに','🌙')+g('morning','あさに','🌅')+g('home','もってかえる','🎒')
+    +`<div class="row tap" id="addItem"><div class="row-body">
+        <div class="row-name" style="color:var(--morning)">＋ 持ち物をふやす</div></div></div>`;
+
+  document.querySelectorAll('.edit-item').forEach(r=>{
+    r.onclick=()=>openItem(items.find(i=>i.id===+r.dataset.id));
+  });
+  $('addItem').onclick=()=>openItem(null);
+
+  $('stockList').innerHTML=
+    (stocks.length?stocks.map(s=>`
+    <div class="row tap edit-stock" data-id="${s.id}">
+      <div class="row-body">
+        <div class="row-name">${s.name}</div>
+        <div class="row-sub">${dowsLabel(s.dows)} ${s.hour}時${s.sub?' ・ '+s.sub:''}</div>
+      </div><div class="chev">›</div></div>`).join('')
+    :`<div class="row" style="opacity:.55"><div class="row-body">
+       <div class="row-sub">まだありません</div></div></div>`)
+    +`<div class="row tap" id="addStock"><div class="row-body">
+        <div class="row-name" style="color:var(--stock)">＋ ストックをふやす</div></div></div>`;
+
+  document.querySelectorAll('.edit-stock').forEach(r=>{
+    r.onclick=()=>openStock(stocks.find(s=>s.id===+r.dataset.id));
+  });
+  $('addStock').onclick=()=>openStock(null);
+}
+
+/* ============ 編集シート ============ */
+let editing=null, editKind='item';
+
+function openItem(it){
+  editing=it; editKind='item';
+  const v=it||{name:'',sub:'',when:'night',day:'daily'};
+  $('shTitle').textContent=it?'持ち物をなおす':'持ち物をふやす';
+  $('shBody').innerHTML=`
+    <label class="fld"><span>なまえ</span>
+      <input id="fName" type="text" placeholder="れい：体そう服" value="${v.name}"></label>
+    <label class="fld"><span>メモ（なくてもOK）</span>
+      <input id="fSub" type="text" placeholder="れい：名前を書く" value="${v.sub||''}"></label>
+    <div class="fld"><span>いつ持っていく</span>
+      <div class="opt-row" id="fDay">
+        ${['daily',1,2,3,4,5].map(d=>`<button class="opt${String(v.day)===String(d)?' on':''}" data-v="${d}">${d==='daily'?'毎日':DAYS[d]}</button>`).join('')}
+      </div></div>
+    <div class="fld"><span>じゅんびのタイミング</span>
+      <div class="opt-row" id="fWhen">
+        <button class="opt w-night${v.when==='night'?' on':''}" data-v="night">🌙 よる</button>
+        <button class="opt w-morning${v.when==='morning'?' on':''}" data-v="morning">🌅 あさ</button>
+        <button class="opt w-home${v.when==='home'?' on':''}" data-v="home">🎒 かえり</button>
+      </div></div>`;
+  $('shDel').style.display=it?'block':'none';
+  bindOpts(); openSheet();
+}
+
+function openStock(st){
+  editing=st; editKind='stock';
+  const v=st||{name:'',sub:'',dows:[6],hour:20};
+  $('shTitle').textContent=st?'ストックをなおす':'ストックをふやす';
+  $('shBody').innerHTML=`
+    <label class="fld"><span>なまえ</span>
+      <input id="fName" type="text" placeholder="れい：オムツ" value="${v.name}"></label>
+    <label class="fld"><span>メモ（なくてもOK）</span>
+      <input id="fSub" type="text" placeholder="れい：10枚を切ったら買う" value="${v.sub||''}"></label>
+    <div class="fld"><span>たしかめる曜日<em>いくつでも えらべます</em></span>
+      <div class="opt-row multi" id="fDow">
+        ${[1,2,3,4,5,6,0].map(d=>`<button class="opt${(v.dows||[]).includes(d)?' on':''}" data-v="${d}">${DAYS[d]}</button>`).join('')}
+      </div></div>
+    <label class="fld"><span>たしかめる時刻</span>
+      <input id="fHour" type="number" min="0" max="23" value="${v.hour}"> 時</label>`;
+  $('shDel').style.display=st?'block':'none';
+  bindOpts(); openSheet();
+}
+
+function bindOpts(){
+  document.querySelectorAll('#shBody .opt-row').forEach(row=>{
+    const multi=row.classList.contains('multi');
+    row.querySelectorAll('.opt').forEach(b=>{
+      b.onclick=()=>{
+        if(multi){ b.classList.toggle('on'); }
+        else{
+          row.querySelectorAll('.opt').forEach(x=>x.classList.remove('on'));
+          b.classList.add('on');
+        }
+      };
+    });
+  });
+}
+const pick=id=>{const el=document.querySelector('#'+id+' .opt.on');return el?el.dataset.v:null};
+const pickMulti=id=>[...document.querySelectorAll('#'+id+' .opt.on')].map(e=>+e.dataset.v);
+function openSheet(){ $('sheet').classList.add('open'); }
+function closeSheet(){ $('sheet').classList.remove('open'); editing=null; }
+
+$('shCancel').onclick=closeSheet;
+$('shSave').onclick=async()=>{
+  const name=$('fName').value.trim();
+  if(!name){ $('fName').focus(); return; }
+  const sub=$('fSub').value.trim();
+  const btn=$('shSave'); btn.disabled=true;
+  try{
+    if(editKind==='item'){
+      const dv=pick('fDay');
+      const day = dv==='daily'?'daily':+dv;
+      const when=pick('fWhen');
+      let t=editing;
+      if(t) Object.assign(t,{name,sub,day,when});
+      else { t={name,sub,day,when}; items.push(t); }
+      await saveItem(t);
+    }else{
+      const dows=pickMulti('fDow');
+      if(!dows.length){ toast('曜日を ひとつ以上 えらんでください'); btn.disabled=false; return; }
+      const hour=Math.min(23,Math.max(0,+$('fHour').value||20));
+      let t=editing;
+      if(t) Object.assign(t,{name,sub,dows,hour});
+      else { t={name,sub,dows,hour}; stocks.push(t); }
+      await saveStock(t);
+    }
+    closeSheet(); renderItems(); renderPrep();
+  }catch(e){ toast('保存できませんでした'); }
+  btn.disabled=false;
+};
+$('shDel').onclick=async()=>{
+  if(!editing)return;
+  const t=editing;
+  try{
+    if(editKind==='item'){ items=items.filter(i=>i!==t); await delItem(t.id); }
+    else { stocks=stocks.filter(x=>x!==t); await delStock(t.id); }
+    closeSheet(); renderItems(); renderPrep();
+  }catch(e){ toast('けせませんでした'); }
+};
+
+document.querySelectorAll('.nav button').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    ['Prep','Week','Items','Set'].forEach(v=>$('view'+v).classList.add('hide'));
+    $('view'+b.dataset.v).classList.remove('hide');
+    const L={Week:'曜日ごとの持ち物',Items:'持ち物リスト',Set:'設定'};
+    if(b.dataset.v!=='Prep'){ $('dLabel').textContent=L[b.dataset.v]; $('dVal').textContent=''; }
+    if(b.dataset.v==='Prep')renderPrep();
+    if(b.dataset.v==='Week')renderWeek();
+    if(b.dataset.v==='Items')renderItems();
+  };
+});
+
+document.querySelectorAll('.sim-btns button').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('.sim-btns button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    nowH = b.dataset.h==='' ? null : +b.dataset.h;
+    renderPrep();
+  };
+});
+['tHome','tNight','tMorning'].forEach(id=>{
+  const k=id.slice(1).toLowerCase();
+  $(id).value=times[k];
+  $(id).onchange=()=>{ times[k]=$(id).value; saveTimes(); renderPrep(); };
+});
+document.querySelectorAll('.toggle').forEach(t=>{t.onclick=()=>t.classList.toggle('on')});
+document.querySelectorAll('.sw').forEach(s=>{
+  s.onclick=()=>{
+    s.parentElement.querySelectorAll('.sw').forEach(x=>x.classList.remove('on'));
+    s.classList.add('on');
+  };
+});
+
+/* ============ ログイン ============ */
+let signUpMode=false;
+
+function setMode(up){
+  signUpMode=up;
+  $('aGo').textContent = up?'アカウントを つくる':'はじめる';
+  $('aToggle').textContent = up?'もう アカウントがある':'アカウントを つくる';
+  $('aPass').setAttribute('autocomplete', up?'new-password':'current-password');
+  $('aMsg').textContent='';
+}
+$('aToggle').onclick=()=>setMode(!signUpMode);
+
+$('aGo').onclick=async()=>{
+  const email=$('aMail').value.trim();
+  const password=$('aPass').value;
+  if(!email||!password){ $('aMsg').textContent='メールと パスワードを 入れてください'; return; }
+  if(password.length<6){ $('aMsg').textContent='パスワードは 6文字いじょうで'; return; }
+
+  const btn=$('aGo'); btn.disabled=true; btn.textContent='しばらく お待ちください…';
+  const fn = signUpMode ? sb.auth.signUp({email,password})
+                        : sb.auth.signInWithPassword({email,password});
+  const {data,error} = await fn;
+  btn.disabled=false; setMode(signUpMode);
+
+  if(error){
+    const m=error.message||'';
+    $('aMsg').textContent =
+      /Invalid login/i.test(m) ? 'メールか パスワードが ちがいます'
+      : /already registered|already been/i.test(m) ? 'このメールは 登録ずみです'
+      : /confirm/i.test(m) ? 'メールの かくにんが 必要です'
+      : m;
+    return;
+  }
+  if(!data.session){ $('aMsg').textContent='かくにんメールを 送りました'; return; }
+  await start(data.session.user);
+};
+
+$('btnOut').onclick=async()=>{
+  await sb.auth.signOut();
+  location.reload();
+};
+
+$('aPass').addEventListener('keydown',e=>{ if(e.key==='Enter') $('aGo').click(); });
+
+async function start(u){
+  user=u;
+  $('setMail').textContent=u.email||'';
+  $('auth').classList.add('hide');
+  $('app').classList.remove('hide');
+  await loadAll();
+  ['tHome','tNight','tMorning'].forEach(id=>{ $(id).value=times[id.slice(1).toLowerCase()]; });
+  renderPrep();
+}
+
+async function boot(){
+  const {data}=await sb.auth.getSession();
+  if(data.session) await start(data.session.user);
+  else setMode(false);
+}
+boot();
+
+setInterval(()=>{ if(nowH===null && user) renderPrep(); }, 60000);
+</script>
+</body>
+</html>
