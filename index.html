@@ -439,6 +439,24 @@ header{padding:26px 0 16px;display:flex;align-items:flex-end;justify-content:spa
 @media (prefers-reduced-motion: reduce){
   .progress-card.cheer,.progress-card.cheer .yosh-txt{animation:none}
 }
+
+.name-in{
+  width:100%;text-align:center;
+  font-family:'Zen Maru Gothic',sans-serif;
+  font-weight:700;font-size:20px;
+  color:var(--ink);background:var(--card);
+  border:1px solid var(--line);border-radius:14px;
+  padding:15px 16px;margin-bottom:12px;
+}
+.name-in:focus{outline:2px solid var(--morning);outline-offset:-1px}
+.name-picks{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:20px}
+.name-picks button{
+  font-family:'Zen Maru Gothic',sans-serif;font-size:13px;font-weight:700;
+  padding:9px 14px;border-radius:11px;
+  background:var(--card);border:1px solid var(--line);
+  color:var(--ink-soft);cursor:pointer;
+}
+.name-picks button:active{background:var(--paper)}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
@@ -591,6 +609,13 @@ header{padding:26px 0 16px;display:flex;align-items:flex-end;justify-content:spa
     </div>
 
     <div class="ghead">アカウント</div>
+    <div class="row tap" id="btnName">
+      <div class="row-body">
+        <div class="row-name" id="setName">—</div>
+        <div class="row-sub">じぶんの よびかた</div>
+      </div>
+      <div class="chev">›</div>
+    </div>
     <div class="row">
       <div class="row-body">
         <div class="row-name" id="setMail">—</div>
@@ -610,8 +635,6 @@ header{padding:26px 0 16px;display:flex;align-items:flex-end;justify-content:spa
     <div class="ghead">これから作る機能</div>
     <div class="row tap"><div class="row-body"><div class="row-name">📸 おたよりを読みこむ</div>
       <div class="row-sub">写真から持ち物を自動で登録</div></div><div class="chev">›</div></div>
-    <div class="row tap"><div class="row-body"><div class="row-name">👥 パートナーと共有</div>
-      <div class="row-sub">同じリストを2人で確認</div></div><div class="chev">›</div></div>
   </div>
 </div>
 
@@ -626,6 +649,22 @@ header{padding:26px 0 16px;display:flex;align-items:flex-end;justify-content:spa
 </div><!-- /#app -->
 
 <div id="toast" class="toast"></div>
+
+<!-- ===== よびかた ===== -->
+<div class="sheet-bg" id="nameSheet">
+  <div class="sheet ins">
+    <div class="ins-ico">🙂</div>
+    <div class="ins-title">じぶんの よびかた</div>
+    <div class="ins-lead">
+      家族の画面に この名前で ひょうじされます。
+    </div>
+    <input id="nameIn" class="name-in" type="text" maxlength="12"
+           autocomplete="off" placeholder="れい：ママ／パパ">
+    <div class="name-picks" id="namePicks"></div>
+    <button class="ins-ok" id="nameSave">ほぞん</button>
+    <button class="ins-never" id="nameCancel">やめる</button>
+  </div>
+</div>
 
 <!-- ===== あいことば（さそう） ===== -->
 <div class="sheet-bg" id="invite">
@@ -1257,19 +1296,29 @@ document.querySelectorAll('.sim-btns button').forEach(b=>{
 });
 document.querySelectorAll('.toggle').forEach(t=>{t.onclick=()=>t.classList.toggle('on')});
 /* ============ 家族と つかう ============ */
+let myName='';
+
 async function renderFamily(){
   const {data,error}=await sb.from('household_members')
-    .select('user_id, joined_at').order('joined_at');
+    .select('user_id, joined_at, nickname').order('joined_at');
   if(error){ $('famList').innerHTML=''; return; }
   const n=(data||[]).length;
-  $('famList').innerHTML=(data||[]).map((m,i)=>`
-    <div class="row">
+
+  const me=(data||[]).find(m=>m.user_id===user.id);
+  myName = me && me.nickname ? me.nickname : '';
+  $('setName').textContent = myName || '名前を つける';
+
+  $('famList').innerHTML=(data||[]).map((m,i)=>{
+    const mine=m.user_id===user.id;
+    const nm = m.nickname || (i===0?'つくった人':'家族');
+    return `<div class="row">
       <div class="row-body">
-        <div class="row-name">${i===0?'👤':'👥'} ${i===0?'つくった人':'家族'}${
-          m.user_id===user.id?'<span class="me-tag">じぶん</span>':''}</div>
+        <div class="row-name">${mine?'🙂':'👥'} ${nm}${
+          mine?'<span class="me-tag">じぶん</span>':''}</div>
         <div class="row-sub">${new Date(m.joined_at).toLocaleDateString('ja-JP')}から</div>
       </div>
-    </div>`).join('')
+    </div>`;
+  }).join('')
     + (n<2 ? '<div class="hint" style="margin:8px 4px 12px">まだ ひとりです。</div>' : '');
 
   $('btnLeave').style.display = n>=2 ? 'flex' : 'none';
@@ -1281,6 +1330,29 @@ $('btnLeave').onclick=async()=>{
   if(error){ toast(error.message); return; }
   toast('ぬけました');
   await start(user);
+};
+
+/* ---- よびかた ---- */
+const NAME_PICKS=['ママ','パパ','おかあさん','おとうさん','ばあば','じいじ'];
+
+$('btnName').onclick=()=>{
+  $('nameIn').value=myName;
+  $('namePicks').innerHTML=NAME_PICKS.map(x=>`<button data-n="${x}">${x}</button>`).join('');
+  $('namePicks').querySelectorAll('button').forEach(b=>{
+    b.onclick=()=>{ $('nameIn').value=b.dataset.n; };
+  });
+  $('nameSheet').classList.add('open');
+};
+$('nameCancel').onclick=()=>$('nameSheet').classList.remove('open');
+$('nameSave').onclick=async()=>{
+  const v=$('nameIn').value.trim();
+  if(!v){ $('nameIn').focus(); return; }
+  const {error}=await sb.from('household_members')
+    .update({nickname:v}).eq('user_id',user.id).eq('household_id',householdId);
+  if(error){ toast('保存エラー: '+error.message); return; }
+  $('nameSheet').classList.remove('open');
+  toast('ほぞんしました');
+  renderFamily();
 };
 
 $('btnInvite').onclick=async()=>{
@@ -1322,6 +1394,9 @@ function startLive(){
     .on('postgres_changes',
       {event:'*',schema:'public',table:'items',filter:'household_id=eq.'+householdId},
       async ()=>{ await loadAll(); renderPrep(); renderItems(); })
+    .on('postgres_changes',
+      {event:'*',schema:'public',table:'household_members',filter:'household_id=eq.'+householdId},
+      ()=>renderFamily())
     .subscribe();
 }
 async function reloadChecks(){
