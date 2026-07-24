@@ -382,6 +382,35 @@ header{padding:26px 0 16px;display:flex;align-items:flex-end;justify-content:spa
   .slot.pop .yosh span,.slot.pop{animation:none}
   .slot.pop .yosh span{transform:scale(1) rotate(0)}
 }
+
+/* ---- あいことば ---- */
+.code{
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-weight:700;font-size:34px;letter-spacing:.22em;
+  text-align:center;color:var(--ink);
+  background:var(--card);border:2px dashed var(--line);
+  border-radius:16px;padding:22px 10px 22px 22px;margin-bottom:20px;
+  user-select:all;
+}
+.code-in{
+  width:100%;text-align:center;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-weight:700;font-size:28px;letter-spacing:.2em;
+  color:var(--ink);background:var(--card);
+  border:1px solid var(--line);border-radius:16px;
+  padding:18px 10px 18px 20px;margin-bottom:14px;
+  text-transform:uppercase;
+}
+.code-in:focus{outline:2px solid var(--morning);outline-offset:-1px}
+.join-warn{
+  font-size:12.5px;line-height:1.7;color:#B4552F;
+  background:#FDF0E9;border-radius:12px;
+  padding:12px 14px;margin-bottom:18px;text-align:left;font-weight:500;
+}
+.me-tag{
+  font-size:10px;font-weight:700;background:var(--morning);color:#fff;
+  padding:3px 8px;border-radius:6px;margin-left:8px;vertical-align:2px;
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
@@ -511,6 +540,28 @@ header{padding:26px 0 16px;display:flex;align-items:flex-end;justify-content:spa
       <div class="chev">›</div>
     </div>
 
+    <div class="ghead">家族と つかう</div>
+    <div class="hint">
+      おなじリストを 2人で見られます。<br>
+      どちらがチェックしても、すぐに つたわります。
+    </div>
+    <div id="famList"></div>
+    <div class="row tap" id="btnInvite">
+      <div class="row-body"><div class="row-name" style="color:var(--morning)">＋ 家族をさそう</div>
+      <div class="row-sub">あいことばを つくる</div></div>
+      <div class="chev">›</div>
+    </div>
+    <div class="row tap" id="btnJoin">
+      <div class="row-body"><div class="row-name">あいことばを もらった</div>
+      <div class="row-sub">家族のリストに 入る</div></div>
+      <div class="chev">›</div>
+    </div>
+    <div class="row tap" id="btnLeave" style="display:none">
+      <div class="row-body"><div class="row-name" style="color:#C4483A">家族から ぬける</div>
+      <div class="row-sub">じぶんだけのリストに もどす</div></div>
+      <div class="chev">›</div>
+    </div>
+
     <div class="ghead">アカウント</div>
     <div class="row">
       <div class="row-body">
@@ -547,6 +598,40 @@ header{padding:26px 0 16px;display:flex;align-items:flex-end;justify-content:spa
 </div><!-- /#app -->
 
 <div id="toast" class="toast"></div>
+
+<!-- ===== あいことば（さそう） ===== -->
+<div class="sheet-bg" id="invite">
+  <div class="sheet ins">
+    <div class="ins-ico">👨‍👩‍👧</div>
+    <div class="ins-title">あいことば</div>
+    <div class="ins-lead">
+      これを 家族に つたえてください。<br>
+      <b>7日間</b> つかえます。
+    </div>
+    <div class="code" id="invCode">・・・・・・</div>
+    <button class="ins-ok" id="invCopy">コピーする</button>
+    <button class="ins-never" id="invClose">とじる</button>
+  </div>
+</div>
+
+<!-- ===== あいことば（入る） ===== -->
+<div class="sheet-bg" id="join">
+  <div class="sheet ins">
+    <div class="ins-ico">🔑</div>
+    <div class="ins-title">あいことばを 入れる</div>
+    <div class="ins-lead">
+      家族から きいた 6文字を 入れてください。
+    </div>
+    <input id="joinCode" class="code-in" type="text"
+           inputmode="latin" autocapitalize="characters"
+           autocomplete="off" maxlength="6" placeholder="ABC123">
+    <div class="join-warn">
+      入ると、いまの持ち物リストは 家族のものに かわります。
+    </div>
+    <button class="ins-ok" id="joinGo">入る</button>
+    <button class="ins-never" id="joinClose">やめる</button>
+  </div>
+</div>
 
 <!-- ===== ホーム画面に追加の案内 ===== -->
 <div class="sheet-bg" id="install">
@@ -1138,6 +1223,81 @@ document.querySelectorAll('.sim-btns button').forEach(b=>{
   $(id).onchange=()=>{ times[k]=$(id).value; saveTimes(); renderPrep(); };
 });
 document.querySelectorAll('.toggle').forEach(t=>{t.onclick=()=>t.classList.toggle('on')});
+/* ============ 家族と つかう ============ */
+async function renderFamily(){
+  const {data,error}=await sb.from('household_members')
+    .select('user_id, joined_at').order('joined_at');
+  if(error){ $('famList').innerHTML=''; return; }
+  const n=(data||[]).length;
+  $('famList').innerHTML=(data||[]).map((m,i)=>`
+    <div class="row">
+      <div class="row-body">
+        <div class="row-name">${i===0?'👤':'👥'} ${i===0?'つくった人':'家族'}${
+          m.user_id===user.id?'<span class="me-tag">じぶん</span>':''}</div>
+        <div class="row-sub">${new Date(m.joined_at).toLocaleDateString('ja-JP')}から</div>
+      </div>
+    </div>`).join('')
+    + (n<2 ? '<div class="hint" style="margin:8px 4px 12px">まだ ひとりです。</div>' : '');
+
+  $('btnLeave').style.display = n>=2 ? 'flex' : 'none';
+}
+
+$('btnLeave').onclick=async()=>{
+  if(!confirm('家族から ぬけますか？\n自分だけの あたらしいリストに なります。')) return;
+  const {error}=await sb.rpc('leave_household');
+  if(error){ toast(error.message); return; }
+  toast('ぬけました');
+  await start(user);
+};
+
+$('btnInvite').onclick=async()=>{
+  $('invCode').textContent='...';
+  $('invite').classList.add('open');
+  const {data,error}=await sb.rpc('create_invite');
+  if(error){ toast('あいことばを つくれません: '+error.message); $('invite').classList.remove('open'); return; }
+  $('invCode').textContent=data;
+};
+$('invClose').onclick=()=>$('invite').classList.remove('open');
+$('invCopy').onclick=async()=>{
+  const c=$('invCode').textContent;
+  try{ await navigator.clipboard.writeText(c); toast('コピーしました'); }
+  catch(e){ toast('長おしで コピーしてください'); }
+};
+
+$('btnJoin').onclick=()=>{ $('joinCode').value=''; $('join').classList.add('open'); };
+$('joinClose').onclick=()=>$('join').classList.remove('open');
+$('joinGo').onclick=async()=>{
+  const code=$('joinCode').value.trim().toUpperCase();
+  if(code.length<6){ toast('6文字 入れてください'); return; }
+  const btn=$('joinGo'); btn.disabled=true; btn.textContent='かくにん中…';
+  const {error}=await sb.rpc('join_household',{invite_code:code});
+  btn.disabled=false; btn.textContent='入る';
+  if(error){ toast(error.message); return; }
+  $('join').classList.remove('open');
+  toast('家族のリストに 入りました');
+  await start(user);
+};
+
+/* ---- 相手の変更を すぐ反映する ---- */
+let liveCh=null;
+function startLive(){
+  if(liveCh) sb.removeChannel(liveCh);
+  liveCh=sb.channel('h-'+householdId)
+    .on('postgres_changes',
+      {event:'*',schema:'public',table:'checks',filter:'household_id=eq.'+householdId},
+      async ()=>{ await reloadChecks(); renderPrep(); })
+    .on('postgres_changes',
+      {event:'*',schema:'public',table:'items',filter:'household_id=eq.'+householdId},
+      async ()=>{ await loadAll(); renderPrep(); renderItems(); })
+    .subscribe();
+}
+async function reloadChecks(){
+  const {data}=await sb.from('checks').select('*')
+    .eq('household_id',householdId)
+    .gte('target_date', iso(Date.now()-2*86400000));
+  checked=new Set((data||[]).map(r=>ckey(r.slot_key,r.target_date,r.item_id)));
+}
+
 /* ============ 通知 ============ */
 const VAPID_PUBLIC = 'BIV8loTCp2tG9R9oN-rCuNa6QO_65ZCcJzlWXR7ogVtTDpnUCJGOW_Vp7o7lSNB4qXWSxV_xnZX3iNt4BudN6HM';
 
@@ -1319,6 +1479,8 @@ async function start(u){
   renderSchool();
   renderPrep();
   refreshNotifRow();
+  renderFamily();
+  startLive();
   setTimeout(maybeShowInstall, 1200);
 }
 
