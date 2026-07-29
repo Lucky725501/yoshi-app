@@ -1059,7 +1059,7 @@ function renderPrep(){
   const left=total-done;
   $('pMsg').innerHTML = !total?'じゅんびは ありません'
     : left===0?'<b class="yosh-txt">よしっ！</b> ぜんぶ そろいました'
-    : left===total?`これから ${total}つ`:`あと ${left}つ`;
+    : left===total?`これから ${cnt(total)}`:`あと ${cnt(left)}`;
 
   const NOON=12*60, EVE=20*60;
   const isSchool=d=>schoolDows.includes(((d%7)+7)%7);
@@ -1094,14 +1094,21 @@ function renderPrep(){
 
 let selDay=3;
 function renderWeek(){
-  $('weekStrip').innerHTML=[1,2,3,4,5].map(d=>{
-    const n=forDay(d).filter(i=>i.when!=='home').length;
+  // 登園する曜日だけを、月はじまりで並べる
+  const days=[1,2,3,4,5,6,0].filter(d=>schoolDows.includes(d));
+  if(!days.includes(selDay)) selDay=days[0];
+
+  $('weekStrip').innerHTML=days.map(d=>{
+    const n=forDay(d).length;   // 持ち帰りもふくめる
     return `<div class="day${d===selDay?' sel':''}" data-d="${d}">
-      <div class="d">${DAYS[d]}</div><div class="n">${n}こ</div></div>`;
+      <div class="d">${DAYS[d]}</div><div class="n">${cnt(n)}</div></div>`;
   }).join('');
+
   const list=forDay(selDay);
   const only=list.filter(i=>i.day!=='daily');
-  $('weekHint').textContent=only.length?`${DAYS[selDay]}曜だけの持ち物が ${only.length}つ`:`${DAYS[selDay]}曜は 毎日のものだけ`;
+  $('weekHint').textContent = only.length
+    ? `${DAYS[selDay]}曜だけの持ち物が ${cnt(only.length)}`
+    : `${DAYS[selDay]}曜は 毎日のものだけ`;
   const g=(w,ico,label)=>{
     const arr=list.filter(i=>i.when===w);
     if(!arr.length)return '';
@@ -1117,6 +1124,8 @@ function renderWeek(){
 }
 
 function dayLabel(d){ return d==='daily'?'毎日':DAYS[d]+'曜'; }
+/* 1〜9は「つ」、10以上は「個」 */
+const cnt = n => n>=10 ? `${n}個` : `${n}つ`;
 function dowsLabel(ds){
   const a=(ds||[]).slice().sort((x,y)=>((x+6)%7)-((y+6)%7));
   if(!a.length) return '曜日 みせんたく';
