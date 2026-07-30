@@ -1352,7 +1352,7 @@ function renderItems(){
         <div class="row-name" style="color:var(--morning)">＋ 持ち物をふやす</div></div></div>`;
 
   document.querySelectorAll('.edit-item').forEach(r=>{
-    r.onclick=()=>openItem(items.find(i=>i.id===+r.dataset.id));
+    r.onclick=()=>openItem(items.find(i=>String(i.id)===r.dataset.id));
   });
   $('addItem').onclick=()=>openItem(null);
 
@@ -1369,7 +1369,7 @@ function renderItems(){
         <div class="row-name" style="color:var(--stock)">＋ ストックをふやす</div></div></div>`;
 
   document.querySelectorAll('.edit-stock').forEach(r=>{
-    r.onclick=()=>openStock(stocks.find(s=>s.id===+r.dataset.id));
+    r.onclick=()=>openStock(stocks.find(s=>String(s.id)===r.dataset.id));
   });
   $('addStock').onclick=()=>openStock(null);
 }
