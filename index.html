@@ -457,6 +457,136 @@ header{padding:26px 0 16px;display:flex;align-items:flex-end;justify-content:spa
   color:var(--ink-soft);cursor:pointer;
 }
 .name-picks button:active{background:var(--paper)}
+
+/* ---- 絵えらび ---- */
+.emoji-now{text-align:center;font-size:52px;line-height:1;margin-bottom:12px}
+.emoji-box{max-height:250px;overflow-y:auto;background:var(--card);
+  border:1px solid var(--line);border-radius:14px;padding:12px 13px}
+.emoji-g{font-family:'Zen Maru Gothic',sans-serif;font-size:11.5px;font-weight:700;
+  color:var(--ink-soft);margin:10px 0 6px;letter-spacing:.06em}
+.emoji-g:first-child{margin-top:0}
+.emoji-row{display:flex;flex-wrap:wrap;gap:5px}
+.em{font-size:24px;line-height:1;padding:7px;border-radius:10px;
+  background:none;border:2px solid transparent;cursor:pointer}
+.em.on{border-color:var(--morning);background:var(--morning-bg)}
+.fld>span em{font-style:normal;font-weight:500;font-size:11.5px;color:#A9A296;margin-left:8px}
+.item-emoji{font-size:26px;line-height:1;flex:none}
+
+/* ---- こどもモード ---- */
+.kid{
+  position:fixed;inset:0;z-index:70;background:var(--paper);
+  display:none;flex-direction:column;
+  padding:max(18px,env(safe-area-inset-top)) 22px max(22px,env(safe-area-inset-bottom));
+}
+.kid.open{display:flex}
+.kid-top{display:flex;align-items:center;gap:14px;margin-bottom:8px}
+.kid-dots{flex:1;display:flex;gap:7px;flex-wrap:wrap}
+.kid-dot{width:13px;height:13px;border-radius:99px;background:#E3DDD2;transition:.3s}
+.kid-dot.done{background:var(--home)}
+.kid-dot.now{background:var(--ink);transform:scale(1.28)}
+.kid-exit{
+  background:none;border:none;cursor:pointer;flex:none;
+  font-family:'Zen Maru Gothic',sans-serif;font-weight:700;font-size:14px;
+  color:var(--ink-soft);padding:9px 12px;
+}
+
+.kid-stage{flex:1;display:grid;place-items:center;min-height:0}
+.kid-card{text-align:center;padding:16px}
+.kid-emoji{font-size:150px;line-height:1.1;margin-bottom:22px}
+.kid-name{
+  font-family:'Zen Maru Gothic',sans-serif;font-weight:900;
+  font-size:44px;line-height:1.3;letter-spacing:.03em;
+}
+.kid-memo{
+  font-family:'Zen Maru Gothic',sans-serif;font-weight:700;
+  font-size:20px;color:var(--ink-soft);margin-top:14px;
+}
+.kid-card.in{animation:kidIn .34s cubic-bezier(.3,1.3,.5,1)}
+.kid-card.out{animation:kidOut .22s ease forwards}
+@keyframes kidIn{
+  0%{opacity:0;transform:translateX(46px) scale(.9)}
+  100%{opacity:1;transform:translateX(0) scale(1)}
+}
+@keyframes kidOut{
+  0%{opacity:1;transform:translateX(0) scale(1)}
+  100%{opacity:0;transform:translateX(-46px) scale(.9)}
+}
+.kid-card.pop{animation:kidPop .42s cubic-bezier(.28,1.7,.5,1)}
+@keyframes kidPop{
+  0%{transform:scale(1)} 40%{transform:scale(1.16)} 100%{transform:scale(1)}
+}
+
+.kid-bottom{flex:none}
+.kid-go{
+  width:100%;border:none;cursor:pointer;
+  font-family:'Zen Maru Gothic',sans-serif;font-weight:900;
+  font-size:34px;color:#fff;background:var(--morning);
+  border-radius:26px;padding:26px;letter-spacing:.06em;
+  box-shadow:0 7px 0 #B95F2F;transition:.09s;
+}
+.kid-go:active{transform:translateY(5px);box-shadow:0 2px 0 #B95F2F}
+.kid-back{
+  width:100%;background:none;border:none;cursor:pointer;
+  font-family:'Zen Maru Gothic',sans-serif;font-weight:700;
+  font-size:16px;color:var(--ink-soft);padding:16px 0 4px;
+}
+.kid-back:disabled{opacity:.3}
+
+.kid-done{
+  position:absolute;inset:0;background:var(--paper);
+  display:none;place-items:center;padding:26px;
+}
+.kid-done.open{display:grid}
+.kid-done-in{text-align:center;width:100%;max-width:420px}
+.kid-done-emoji{font-size:110px;line-height:1;animation:doneSpin .9s cubic-bezier(.3,1.4,.5,1)}
+.kid-done-txt{
+  font-family:'Zen Maru Gothic',sans-serif;font-weight:900;
+  font-size:74px;color:var(--morning);margin-top:12px;letter-spacing:.06em;
+  animation:donePop 1s cubic-bezier(.28,1.7,.5,1);
+}
+.kid-done-sub{
+  font-family:'Zen Maru Gothic',sans-serif;font-weight:700;
+  font-size:24px;color:var(--ink-soft);margin-top:14px;
+}
+.kid-done-btn{
+  margin-top:38px;width:100%;border:none;cursor:pointer;
+  font-family:'Zen Maru Gothic',sans-serif;font-weight:900;font-size:24px;
+  color:#fff;background:var(--home);border-radius:22px;padding:22px;
+}
+@keyframes doneSpin{
+  0%{transform:scale(.2) rotate(-40deg);opacity:0}
+  60%{transform:scale(1.2) rotate(10deg);opacity:1}
+  100%{transform:scale(1) rotate(0)}
+}
+@keyframes donePop{
+  0%{transform:scale(.3);opacity:0}
+  45%{transform:scale(1.3);opacity:1}
+  70%{transform:scale(.95)}
+  100%{transform:scale(1)}
+}
+@media (prefers-reduced-motion: reduce){
+  .kid-card.in,.kid-card.out,.kid-card.pop,
+  .kid-done-emoji,.kid-done-txt{animation:none}
+}
+
+/* こどもモードへの入口 */
+.kid-enter{
+  display:flex;align-items:center;justify-content:center;gap:9px;
+  width:100%;border:2px solid var(--morning);background:var(--morning-bg);
+  border-radius:17px;padding:15px;margin-bottom:20px;cursor:pointer;
+  font-family:'Zen Maru Gothic',sans-serif;font-weight:700;font-size:17px;
+  color:var(--morning);
+}
+.kid-enter:active{transform:scale(.99)}
+.kid-enter .e{font-size:22px}
+
+/* 子どもがチェックずみ */
+.item.kiddone .check{border-color:var(--morning);background:var(--morning-bg)}
+.kid-badge{
+  font-size:10px;font-weight:700;background:var(--morning);color:#fff;
+  padding:3px 8px;border-radius:6px;margin-left:7px;vertical-align:2px;
+  font-family:'Zen Maru Gothic',sans-serif;
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
@@ -533,6 +663,19 @@ header{padding:26px 0 16px;display:flex;align-items:flex-end;justify-content:spa
   <div id="viewSet" class="hide">
     <div class="ghead">通知</div>
     <div id="notifRow"></div>
+
+    <div class="ghead">こどもモード</div>
+    <div class="row">
+      <div class="row-body">
+        <div class="row-name">🔊 音を鳴らす</div>
+        <div class="row-sub">「よしっ！」のときに 音が出ます</div>
+      </div>
+      <button class="toggle" id="tgKidSound"></button>
+    </div>
+    <div class="hint">
+      こどもがチェックすると、じゅんび画面に「こども ✓」が付きます。<br>
+      さいごに 大人が たしかめて チェックしてください。
+    </div>
 
     <div class="ghead">登園する曜日</div>
     <div class="hint">えらんだ曜日だけ、じゅんびと通知が出ます。</div>
@@ -649,6 +792,36 @@ header{padding:26px 0 16px;display:flex;align-items:flex-end;justify-content:spa
 </div><!-- /#app -->
 
 <div id="toast" class="toast"></div>
+
+<!-- ===== こどもモード ===== -->
+<div id="kid" class="kid">
+  <div class="kid-top">
+    <div class="kid-dots" id="kidDots"></div>
+    <button class="kid-exit" id="kidExit">おわる</button>
+  </div>
+
+  <div class="kid-stage" id="kidStage">
+    <div class="kid-card" id="kidCard">
+      <div class="kid-emoji" id="kidEmoji">📦</div>
+      <div class="kid-name" id="kidName"></div>
+      <div class="kid-memo" id="kidMemo"></div>
+    </div>
+  </div>
+
+  <div class="kid-bottom">
+    <button class="kid-go" id="kidGo">よしっ！</button>
+    <button class="kid-back" id="kidBack">← もどる</button>
+  </div>
+
+  <div class="kid-done" id="kidDone">
+    <div class="kid-done-in">
+      <div class="kid-done-emoji">🎉</div>
+      <div class="kid-done-txt">よしっ！</div>
+      <div class="kid-done-sub" id="kidDoneSub">ぜんぶ できました</div>
+      <button class="kid-done-btn" id="kidDoneBtn">おしまい</button>
+    </div>
+  </div>
+</div>
 
 <!-- ===== よびかた ===== -->
 <div class="sheet-bg" id="nameSheet">
@@ -781,10 +954,13 @@ async function loadAll(){
     applyColors();
   }
 
+  await reloadKidChecks().catch(()=>{});
+
   items=(it.data||[]).map(r=>({
     id:r.id, name:r.name, sub:r.memo||'',
     day: r.day==='daily'?'daily':+r.day,
-    when:r.when_slot, spot:r.is_spot, spotDate:r.spot_date
+    when:r.when_slot, spot:r.is_spot, spotDate:r.spot_date,
+    emoji:r.emoji||DEFAULT_EMOJI
   }));
   stocks=(st.data||[]).map(r=>({
     id:r.id, name:r.name, sub:r.memo||'', dows:r.dows||[], hour:r.hour
@@ -801,7 +977,7 @@ async function saveTimes(){
 async function saveItem(it){
   const row={
     household_id:householdId, name:it.name, memo:it.sub||'',
-    day:String(it.day), when_slot:it.when
+    day:String(it.day), when_slot:it.when, emoji:it.emoji||DEFAULT_EMOJI
   };
   if(it.id && String(it.id).length>20){
     const {error}=await sb.from('items').update(row).eq('id',it.id);
@@ -1041,11 +1217,13 @@ function renderPrep(){
       </div>
       <div class="list">${list.map(i=>{
         const on=checked.has(i._k)?' on':'';
+        const kd=(!checked.has(i._k) && kidChecked.has(i._k))?' kiddone':'';
         const tag=i.spot?'<span class="tag spot">おたより</span>':'';
-        return `<div class="item${on}" data-k="${i._k}">
+        const kb=kidChecked.has(i._k)?'<span class="kid-badge">こども ✓</span>':'';
+        return `<div class="item${on}${kd}" data-k="${i._k}">
           <div class="check">${tick()}</div>
           <div class="item-body">
-            <div class="item-name">${i.name}</div>
+            <div class="item-name">${i.name}${kb}</div>
             <div class="item-sub">${i.sub}</div>
           </div>${tag}</div>`;
       }).join('')}</div>
@@ -1123,6 +1301,20 @@ function renderWeek(){
   document.querySelectorAll('.day').forEach(el=>{el.onclick=()=>{selDay=+el.dataset.d;renderWeek()}});
 }
 
+const EMOJI_GROUPS=[
+  ['のみもの・食事', ['🥤','🍱','🥛','🍴','🥢','🧃','🍪','🍎','🧴','☕']],
+  ['衣類',           ['👕','👖','🧦','🩲','🧥','🩳','👗','🥼','🦺','👘']],
+  ['はきもの・ぼうし',['👟','👞','👢','🩴','🧢','👒','⛑️','🎩']],
+  ['ねる・タオル',   ['🛏️','🧸','🧻','🪥','🧼','🧷','🪮']],
+  ['かばん・ふくろ', ['🎒','👜','🛍️','💼','🧺','📦']],
+  ['べんきょう',     ['📔','📕','📄','✏️','🖍️','✂️','📐','🎨']],
+  ['そと・てんき',   ['☂️','🌂','🧤','🕶️','🦟','🔦']],
+  ['うんどう・プール',['🩱','🏊','⚽','🏃','🤸','🎽']],
+  ['おかね・れんらく',['💰','💴','✉️','📮','🏷️']],
+  ['そのほか',       ['🌸','⭐','🎁','🔑','📱','🧩','🪀','🎵']],
+];
+const DEFAULT_EMOJI='📦';
+
 function dayLabel(d){ return d==='daily'?'毎日':DAYS[d]+'曜'; }
 /* 1〜9は「つ」、10以上は「個」 */
 const cnt = n => n>=10 ? `${n}個` : `${n}つ`;
@@ -1139,6 +1331,7 @@ function renderItems(){
     return `<div class="ghead">${ico} ${label}</div>`+
       (arr.length?arr.map(it=>`
       <div class="row tap edit-item" data-id="${it.id}">
+        <div class="item-emoji">${it.emoji||DEFAULT_EMOJI}</div>
         <div class="row-body">
           <div class="row-name">${it.name}</div>
           <div class="row-sub">${dayLabel(it.day)}${it.sub?' ・ '+it.sub:''}</div>
@@ -1179,11 +1372,21 @@ let editing=null, editKind='item';
 
 function openItem(it){
   editing=it; editKind='item';
-  const v=it||{name:'',sub:'',when:'night',day:'daily'};
+  const v=it||{name:'',sub:'',when:'night',day:'daily',emoji:''};
+  const cur=v.emoji||DEFAULT_EMOJI;
   $('shTitle').textContent=it?'持ち物をなおす':'持ち物をふやす';
   $('shBody').innerHTML=`
     <label class="fld"><span>なまえ</span>
       <input id="fName" type="text" placeholder="れい：体そう服" value="${v.name}"></label>
+    <div class="fld"><span>え を えらぶ<em>こどもモードで つかいます</em></span>
+      <div class="emoji-now"><span id="fEmojiNow">${cur}</span></div>
+      <div class="emoji-box" id="fEmoji">
+        ${EMOJI_GROUPS.map(([g,list])=>`
+          <div class="emoji-g">${g}</div>
+          <div class="emoji-row">${list.map(e=>
+            `<button class="em${e===cur?' on':''}" data-e="${e}">${e}</button>`).join('')}</div>
+        `).join('')}
+      </div></div>
     <label class="fld"><span>メモ（なくてもOK）</span>
       <input id="fSub" type="text" placeholder="れい：名前を書く" value="${v.sub||''}"></label>
     <div class="fld"><span>いつ持っていく</span>
@@ -1197,7 +1400,19 @@ function openItem(it){
         <button class="opt w-home${v.when==='home'?' on':''}" data-v="home">🎒 かえり</button>
       </div></div>`;
   $('shDel').style.display=it?'block':'none';
+  bindEmoji();
   bindOpts(); openSheet();
+}
+
+function bindEmoji(){
+  const box=$('fEmoji'); if(!box)return;
+  box.querySelectorAll('.em').forEach(b=>{
+    b.onclick=()=>{
+      box.querySelectorAll('.em').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on');
+      $('fEmojiNow').textContent=b.dataset.e;
+    };
+  });
 }
 
 function openStock(st){
@@ -1249,9 +1464,11 @@ $('shSave').onclick=async()=>{
       const dv=pick('fDay');
       const day = dv==='daily'?'daily':+dv;
       const when=pick('fWhen');
+      const el=document.querySelector('#fEmoji .em.on');
+      const emoji=el?el.dataset.e:DEFAULT_EMOJI;
       let t=editing;
-      if(t) Object.assign(t,{name,sub,day,when});
-      else { t={name,sub,day,when}; items.push(t); }
+      if(t) Object.assign(t,{name,sub,day,when,emoji});
+      else { t={name,sub,day,when,emoji}; items.push(t); }
       await saveItem(t);
     }else{
       const dows=pickMulti('fDow');
@@ -1303,7 +1520,156 @@ document.querySelectorAll('.sim-btns button').forEach(b=>{
   $(id).value=times[k];
   $(id).onchange=()=>{ times[k]=$(id).value; saveTimes(); renderPrep(); };
 });
-document.querySelectorAll('.toggle').forEach(t=>{t.onclick=()=>t.classList.toggle('on')});
+document.querySelectorAll('.toggle').forEach(t=>{
+  if(t.id==='tgKidSound') return;   // 音の設定は別あつかい
+  t.onclick=()=>t.classList.toggle('on');
+});
+/* ============ こどもモード ============ */
+let kidChecked=new Set();   // 子どもがチェックしたもの
+let kidList=[], kidIdx=0, kidSlot=null;
+
+const KID_SOUND_KEY='yoshi.kidSound';
+const kidSoundOn = ()=> localStorage.getItem(KID_SOUND_KEY)!=='0';
+
+let audioCtx=null;
+function beep(kind){
+  if(!kidSoundOn()) return;
+  try{
+    audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+    const notes = kind==='done' ? [523,659,784,1047] : [659,880];
+    notes.forEach((f,i)=>{
+      const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+      o.type='sine'; o.frequency.value=f;
+      const t=audioCtx.currentTime+i*0.11;
+      g.gain.setValueAtTime(0.0001,t);
+      g.gain.exponentialRampToValueAtTime(0.22,t+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+0.24);
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start(t); o.stop(t+0.26);
+    });
+  }catch(e){}
+}
+
+/* いまの時間帯から、よる か あさ かを決める */
+function kidTargetSlot(){
+  const slots=buildTimeline().filter(s=>!s.stock && s.key!=='home');
+  if(!slots.length) return null;
+  const nowM=curH()*60;
+  // まだ終わっていない枠を優先。なければ直近の枠。
+  const undone=slots.find(s=>slotItems(s).some(i=>!kidChecked.has(i._k)));
+  return undone || slots[0];
+}
+
+function openKid(){
+  const slot=kidTargetSlot();
+  if(!slot){ toast('いま じゅんびは ありません'); return; }
+  kidSlot=slot;
+  kidList=slotItems(slot);
+  if(!kidList.length){ toast('いま じゅんびは ありません'); return; }
+  // 続きから：まだのものの先頭へ
+  const first=kidList.findIndex(i=>!kidChecked.has(i._k));
+  kidIdx = first<0 ? 0 : first;
+  $('kidDone').classList.remove('open');
+  $('kid').classList.add('open');
+  drawKid(true);
+}
+
+function closeKid(){
+  $('kid').classList.remove('open');
+  $('kidDone').classList.remove('open');
+  renderPrep();
+}
+
+function drawKid(fresh){
+  const it=kidList[kidIdx];
+  if(!it) return;
+  $('kidEmoji').textContent = it.emoji || DEFAULT_EMOJI;
+  $('kidName').textContent  = it.name;
+  $('kidMemo').textContent  = it.sub || '';
+  $('kidBack').disabled = kidIdx===0;
+
+  $('kidDots').innerHTML = kidList.map((x,i)=>
+    `<div class="kid-dot${kidChecked.has(x._k)?' done':''}${i===kidIdx?' now':''}"></div>`
+  ).join('');
+
+  const c=$('kidCard');
+  if(fresh){ c.classList.remove('in'); void c.offsetWidth; c.classList.add('in'); }
+}
+
+$('kidGo').onclick=async()=>{
+  const it=kidList[kidIdx];
+  if(!it) return;
+  kidChecked.add(it._k);
+  beep('one');
+
+  const c=$('kidCard');
+  c.classList.remove('pop'); void c.offsetWidth; c.classList.add('pop');
+
+  // 保存（子どものチェックは別あつかい）
+  setKidCheck(it._slot, it._date, it.id, true)
+    .catch(e=>toast('保存エラー: '+(e.message||e)));
+
+  const next=kidList.findIndex((x,i)=>i>kidIdx && !kidChecked.has(x._k));
+  setTimeout(()=>{
+    if(next>=0){
+      kidIdx=next;
+      c.classList.remove('pop');
+      drawKid(true);
+    }else if(kidList.every(x=>kidChecked.has(x._k))){
+      beep('done');
+      $('kidDoneSub').textContent =
+        (kidSlot.key==='night'?'よるのじゅんび':'あさのじゅんび')+' ぜんぶ できました';
+      $('kidDone').classList.add('open');
+    }else{
+      kidIdx=kidList.findIndex(x=>!kidChecked.has(x._k));
+      c.classList.remove('pop');
+      drawKid(true);
+    }
+  }, 460);
+};
+
+$('kidBack').onclick=()=>{
+  if(kidIdx===0) return;
+  kidIdx--;
+  const it=kidList[kidIdx];
+  // もどったら、そのぶんは取り消す
+  kidChecked.delete(it._k);
+  setKidCheck(it._slot, it._date, it.id, false).catch(()=>{});
+  drawKid(true);
+};
+
+$('btnKid').onclick=openKid;
+$('tgKidSound').classList.toggle('on', kidSoundOn());
+$('tgKidSound').onclick=()=>{
+  const now=$('tgKidSound').classList.toggle('on');
+  localStorage.setItem(KID_SOUND_KEY, now?'1':'0');
+  if(now) beep('one');
+};
+$('kidExit').onclick=closeKid;
+$('kidDoneBtn').onclick=closeKid;
+
+/* 子どものチェックを保存する */
+async function setKidCheck(slotKey,dateStr,itemId,on){
+  if(on){
+    const {error}=await sb.from('kid_checks').upsert({
+      household_id:householdId, target_date:dateStr,
+      slot_key:slotKey, item_id:itemId
+    });
+    if(error) throw error;
+  }else{
+    await sb.from('kid_checks').delete()
+      .eq('household_id',householdId).eq('target_date',dateStr)
+      .eq('slot_key',slotKey).eq('item_id',itemId);
+  }
+}
+
+async function reloadKidChecks(){
+  const {data}=await sb.from('kid_checks').select('*')
+    .eq('household_id',householdId)
+    .gte('target_date', iso(Date.now()-2*86400000));
+  kidChecked=new Set((data||[]).map(r=>ckey(r.slot_key,r.target_date,r.item_id)));
+}
+
 /* ============ 家族と つかう ============ */
 let myName='';
 
