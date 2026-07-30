@@ -479,6 +479,8 @@ header{padding:26px 0 16px;display:flex;align-items:flex-end;justify-content:spa
   padding:max(18px,env(safe-area-inset-top)) 22px max(22px,env(safe-area-inset-bottom));
 }
 .kid.open{display:flex}
+body.kid-on{overflow:hidden}
+body.kid-on .nav{display:none}
 .kid-top{display:flex;align-items:center;gap:14px;margin-bottom:8px}
 .kid-dots{flex:1;display:flex;gap:7px;flex-wrap:wrap}
 .kid-dot{width:13px;height:13px;border-radius:99px;background:#E3DDD2;transition:.3s}
@@ -629,12 +631,17 @@ header{padding:26px 0 16px;display:flex;align-items:flex-end;justify-content:spa
       </div>
     </div>
 
-    <div class="progress-card">
+    <button class="kid-enter" id="btnKid">
+      <span class="e">🧒</span> こどもと じゅんびする
+    </button>
+
+    <div class="progress-card" id="pCard">
       <div class="progress-top">
         <div class="progress-msg" id="pMsg"></div>
         <div class="progress-count"><b id="pDone">0</b> / <span id="pAll">0</span></div>
       </div>
       <div class="bar"><i id="pBar"></i></div>
+      <div id="pLate"></div>
     </div>
 
     <div id="timeline"></div>
@@ -1561,6 +1568,7 @@ function kidTargetSlot(){
 }
 
 function openKid(){
+  document.body.classList.add('kid-on');
   const slot=kidTargetSlot();
   if(!slot){ toast('いま じゅんびは ありません'); return; }
   kidSlot=slot;
@@ -1575,6 +1583,7 @@ function openKid(){
 }
 
 function closeKid(){
+  document.body.classList.remove('kid-on');
   $('kid').classList.remove('open');
   $('kidDone').classList.remove('open');
   renderPrep();
